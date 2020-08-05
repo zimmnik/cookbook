@@ -1,0 +1,7 @@
+cat << 'EOF' >> ~/.tmux.conf
+# Changing the default prefix key:
+unbind-key C-b
+set-option -g prefix C-a
+bind-key C-a send-prefix
+set-option -g history-limit 5000
+EOF

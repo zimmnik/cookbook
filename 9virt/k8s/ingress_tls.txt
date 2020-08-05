@@ -1,0 +1,23 @@
+k create secret tls ingress-tls --cert=certificate.crt --key=private.key
+cat << 'EOF' >> ingress.yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  labels:
+    app: appname
+  name: public-ingress
+spec:
+  rules:
+  - host: demo.example.com
+    http:
+      paths:
+      - backend:
+          serviceName: cesbcore
+          servicePort: 8080
+        path: /
+  tls:
+  - hosts:
+    - demo.example.com
+    secretName: ingress-tls
+EOF
+k apply -f ingress.yaml

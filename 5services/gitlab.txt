@@ -1,0 +1,43 @@
+yum -y install curl policycoreutils-python openssh-server postfix
+systemctl enable sshd --now
+systemctl enable postfix --now
+
+curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.rpm.sh | sudo bash
+EXTERNAL_URL="http://gitlab.local" yum -y install gitlab-ee	
+
+mkdir -p /etc/gitlab/ssl
+chmod 700 /etc/gitlab/ssl/
+
+openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes \
+-keyout gitlab.local.key -out gitlab.local.crt -extensions san -config \
+<(echo "[req]"; 
+  echo distinguished_name=req; 
+  echo "[san]"; 
+  echo subjectAltName=DNS:gitlab.local,IP:127.0.0.1
+  ) \
+-subj "/CN=gitlab.local"
+
+vim /etc/gitlab/gitlab.rb
+	external_url 'https://gitlab.local'
+	registry_external_url 'https://gitlab.local'
+	nginx['redirect_http_to_https'] = true
+
+time gitlab-ctl reconfigure
+
+firewall-cmd --permanent --add-service=http
+firewall-cmd --permanent --add-service=https
+systemctl reload firewalld
+
+sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+sudo yum install docker-ce-18.09.9 docker-ce-cli-18.09.9 containerd.io
+systemctl enable docker --now
+docker run hello-world
+
+curl -L https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.rpm.sh | sudo bash
+yum -y install gitlab-runner
+gitlab-runner register --non-interactive --url http://gitlab.local/ --registration-token XXX --executor docker --docker-image "alpine" --docker-privileged
+--tls-ca-file /etc/gitlab/ssl/gitlab.local.crt --locked=false
+systemctl restart gitlab-runner
+
+Если сертификаты были обновлены и в файле  gitlab.rb ничего не менялось, тогда gitlab-ctl reconfigure не перезапустит nginx. Команда gitlab-ctl hup nginx решает эту проблему.
+Сертификат хоста в том же файле должен содержать сертификаты промежуточных центров. Их достаточно объединить в текстовом редакторе

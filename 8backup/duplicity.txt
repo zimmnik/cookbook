@@ -1,0 +1,32 @@
+export PASSPHRASE="password"
+#export FTP_PASSWORD="password"
+#DEST="webdavs://login@webdav.yandex.ru/backup/$NAME"
+
+duplicity remove-older-than 1W --verbosity error --no-print-statistics --force pexpect+sftp://kumon.zimmnik.ru/data/backup/data_from_hp
+
+duplicity --full-if-older-than 1W --verbosity error --no-print-statistics \
+--include /var/lib/lxc/ical/rootfs/etc/nginx \
+--include /var/lib/lxc/ical/rootfs/var/www/ \
+--include /var/lib/lxc/fs/rootfs/mnt/data \
+--exclude-if-present NOBACKUP \
+--exclude '**' / pexpect+sftp://kumon.zimmnik.ru/data/backup/data_from_hp
+
+unset PASSPHRASE
+
+
+# installation
+# cert installation
+
+# status
+duplicity collection-status file:///mnt/backup/ical-duplicity/ | less
+# restore folder by date
+duplicity restore --no-encryption -t 2017-02-25T11:43:00+03:00 file:///mnt/backup/ical-duplicity/ ~/delme3/
+
+# list files
+duplicity list-current-files --no-encryption file:///mnt/backup/ical-duplicity/
+# restore file by date
+duplicity restore --file-to-restore path/file.txt --no-encryption -t 2017-02-25T11:43:00+03:00 file:///mnt/backup/ical-duplicity/ ~/backup/file.txt
+
+TODO
+Par2
+Testing

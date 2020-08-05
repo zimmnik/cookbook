@@ -1,0 +1,19 @@
+apt update && apt -y install dar par2 dar-static man less
+mkdir /stor && cp /usr/bin/dar_static /stor/
+
+cat << 'EOF' >> backup.dcf
+--fs-root=/etc
+#--go-into=default
+#--go-into=cron.daily
+--create=/stor/etc_backup
+--execute '/usr/share/dar/dar_par_create.duc "%p" "%b" %N %e %c 100'
+--exclude-ea=security.selinux
+--compression=lzo compress-exclusion
+EOF
+
+dar --batch=backup.dcf
+dar --list=/stor/etc_backup
+dd if=/dev/urandom of=/stor/etc_backup.1.dar bs=1024 seek=$((RANDOM%10)) count=1 conv=notrunc
+dar --test=/stor/etc_backup --execute '/usr/share/dar/dar_par_test.duc "%p" "%b" %N %e %c'
+dar --extract=/stor/etc_backup --fs-root=/dest
+dar --extract=/stor/etc_backup --fs-root=/dest --go-into=nsswitch.conf

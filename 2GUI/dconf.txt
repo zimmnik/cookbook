@@ -1,0 +1,20 @@
+sudo -u guiuser dbus-launch --exit-with-session gsettings set org.gnome.desktop.background show-desktop-icons true
+
+gsettings list-recursively org.gnome.desktop.background
+gsettings list-recursively
+
+$ cat ~/.local/bin/start.sh 
+#!/bin/bash
+# Gnome 3 can be customised from the command line via the gsettings command
+# This script should help you to find what you're looking for by
+# listing the ranges for all keys for each schema
+
+for schema in $(gsettings list-schemas | sort)
+do
+    for key in $(gsettings list-keys $schema | sort)
+    do
+        value="$(gsettings range $schema $key | tr "\n" " ")"
+        echo "$schema :: $key :: $value"
+    done
+done
+

@@ -1,0 +1,69 @@
+https://elastalert.readthedocs.io/en/latest/ruletypes.html#command
+https://github.com/Yelp/elastalert
+
+sudo kubectl run -it elastalert-devel --image=python:3.6.9-buster --restart=Never --rm=true --command -- bash
+pip install elastalert==0.2.0
+apt update && apt -y install vim
+
+mkdir -p /etc/elastalert/rules && \
+cat <<EOF > /etc/elastalert/config.yaml
+rules_folder: rules
+run_every:
+  minutes: 1
+buffer_time:
+  minutes: 1
+es_host: 10.100.1.101
+es_port: 9200
+writeback_index: elastalert_status
+writeback_alias: elastalert_alerts
+alert_time_limit:
+  days: 2
+EOF
+cat <<EOF > /etc/elastalert/email_auth.yaml
+user: johnsmith
+password: Pa$$w0rd
+EOF
+cat <<EOF > /etc/elastalert/rules/cesbmq_err_rule.yaml
+name: "CSBMQ_ERRORS"
+type: any
+index: "logstash-*"
+timestamp_field: "@ts"
+aggregation:
+  minutes: 10
+aggregation_key: 'kubernetes.pod_name'
+filter:
+- query:
+    query_string:
+      query: "*#MQ_CR_ERR*"
+alert_subject: "CSBMQ CriticalError on pod <{}>"
+alert_subject_args: ['kubernetes.pod_name']
+alert_text_type: alert_text_only
+alert_text: |-
+  {}
+alert_text_args: ['log']
+alert:
+ - email:
+     from_addr: "sender@box.com"
+     email: ['recipient@box.com']
+     smtp_host: "server.domain"
+     smtp_port: "465"
+     smtp_ssl: "true"
+     smtp_auth_file: "../email_auth.yaml"
+EOF
+cd /etc/elastalert
+elastalert-create-index --config config.yaml
+
+elastalert-test-rule --config config.yaml --start 2019-11-14T07:55:00 --end 2019-11-14T08:10:00 --alert rules/cesbmq_err_rule.yaml 2>
+&1 | less
+
+
+2019-11-14T11:55:00
+sudo helm install --name kibana stable/kibana --namespace logging --version 3.2.4 --set ingress.enabled=true,\
+ingress.hosts[0]=kibana.10.100.1.13.nip.io,\
+env.ELASTICSEARCH_HOSTS=http://10.100.1.101:9200,\
+plugins.enabled=true,\
+"files.kibana\.yml.elastalert-kibana-plugin\.serverHost=elastalert",\
+plugins.values={"elastalert-kibana-plugin\,1.0.3\,https://github.com/bitsensor/elastalert-kibana-plugin/releases/download/1.0.3/elastalert-kibana-plugin-1.0.3-6.7.0.zip"}
+
+
+sudo kubectl run elastalert-debug --restart=Never --image=centos -- bash -c 'for i in {1..99}; do echo "TEST|cbsmq|#MQ_XX_ERR_RDBL |F${i}"; done' && sleep 5 &&  sudo kubectl delete pod elastalert-debug

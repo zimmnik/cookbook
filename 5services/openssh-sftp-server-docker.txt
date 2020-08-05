@@ -1,0 +1,63 @@
+mkdir -p /stor/src/openssh-sftp-server
+cd /stor/src/openssh-sftp-server
+
+cat << 'EOF' >> Dockerfile
+FROM centos:8
+MAINTAINER Semyon Vasilkov <docker@zimmnik.ru>
+LABEL Description="OpenSSH SFTP server" Version="1"
+USER root
+RUN yum -y install openssh-server && \
+    yum clean all && \
+    rm -rf /var/cache/yum && \
+    usermod -U root
+EXPOSE 22
+CMD ["/usr/sbin/sshd", "-e", "-D"]
+EOF
+
+docker build -t openssh-sftp-server .
+
+#---------------------------------------------------
+zfs create stor/sftp-backup
+cd /stor/sftp-backup
+mkdir data conf && cd conf
+
+cat << 'EOF' >> sshd_config
+usepam no
+loglevel VERBOSE
+compression no
+disableforwarding yes
+permitrootlogin prohibit-password
+gssapiauthentication no
+pubkeyauthentication yes
+kerberosauthentication no
+passwordauthentication no
+hostbasedauthentication no
+kbdinteractiveauthentication no
+challengeresponseauthentication no
+hostkey /etc/ssh/ssh_host_rsa_key
+hostkey /etc/ssh/ssh_host_ecdsa_key
+hostkey /etc/ssh/ssh_host_ed25519_key
+authorizedkeysfile /etc/ssh/authorized_keys
+chrootdirectory /mnt
+subsystem sftp internal-sftp
+forcecommand internal-sftp
+EOF
+
+vim authorized_keys
+for TYPE in {rsa,ecdsa,ed25519}; do ssh-keygen -N '' -t ${TYPE} -f ssh_host_${TYPE}_key; done
+time sh -c 'ssh-keygen -M 127 -b 2048 -W 2 -G numbers && ssh-keygen -f numbers -T moduli && rm numbers'
+cd .. && chmod og-rwx conf/
+
+#---------------------------------------------------
+cd /stor/sftp-backup
+docker run --name sftp-backup -p 2000:22 -v ${PWD}/conf:/etc/ssh:Z,ro -v ${PWD}/data:/mnt:Z,rw -d openssh-sftp-server
+cd /etc/systemd/system
+docker generate systemd sftp-backup | sed -e '/\[Unit\]/a After=multi-user.target' > sftp-backup.service
+systemctl daemon-reload && systemctl enable sftp-backup.service
+docker logs -ft sftp-backup
+
+#---------------------------------------------------
+sftp -i ~/.ssh/id_rsa_zorg sftp://root@localhost:2000
+sftp -i ~/.ssh/id_rsa_zorg -P 2000 root@localhost
+sudo yum install fuse-sshfs && \
+sshfs root@localhost:/ ~/temp -p 2000 -o IdentityFile=~/.ssh/id_rsa

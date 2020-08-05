@@ -1,0 +1,15 @@
+#Recovering on lvm over mdadm raid
+fsarchiver -v -j 32 restfs backup.fsa id=0,dest=/dev/md127 id=1,dest=/dev/mapper/colorbiz-root id=2,dest=/dev/mapper/colorbiz-db
+mount /dev/mapper/colorbiz-root /mnt/temp
+mount /dev/md127 /mnt/temp/boot
+for i in {dev,sys,proc}; do mount -o bind /$i /mnt/temp/$i; done
+chroot /mnt/temp /bin/bash
+mdadm --detail --scan --verbose | awk '/ARRAY/ {print}' >> /etc/mdadm.conf
+vi /etc/fstab
+vi /etc/mdadm.conf
+vi /etc/default/grub
+grub2-mkconfig -o /boot/grub2/grub.cfg
+grep -v rootfs /proc/mounts > /etc/mtab
+mv /boot/grub/device.map /boot/grub/device.map.backup
+grub2-install --no-floppy /dev/first_mirror_disk
+grub2-install --no-floppy /dev/second_mirror_disk

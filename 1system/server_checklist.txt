@@ -1,0 +1,15 @@
+hardware
+bios
+ipkvm
+installation
+ansible
+
+raid/storage
+
+security(accounts, ssh, passwords)
+network
+
+monitoring
+backup
+update policy
+wiki

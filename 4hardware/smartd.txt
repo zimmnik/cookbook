@@ -1,0 +1,30 @@
+DEFAULT \
+-C 197+ -U 198+ -S on -o on -l selftest -l error -f \
+-m root -M exec /usr/libexec/smartmontools/smartdnotify \
+-s (S/../../../01|L/../../6/21) \
+-I 194 -W 5,45,50 \
+-n standby,10,q \
+-d removable
+DEVICESCAN
+/dev/sda -C 0 -U 0
+
+or
+
+DEVICESCAN \
+-H -S on -o on -l selftest -l error -f \
+-m root -M exec /usr/libexec/smartmontools/smartdnotify \
+-s (S/../../../01|L/../../6/21) \
+-I 194 -W 5,45,50 -R 5! -C 0 \
+-n standby,10,q
+
+or
+
+DEFAULT \
+-H -S on -o on -l selftest -l error -f \
+-m root -M exec /usr/libexec/smartmontools/smartdnotify \
+-s (S/../../../01|L/../../6/21) \
+-I 194 -W 5,45,50 -R 5! -C 0 \
+-n standby,10,q
+/dev/disk/by-id/ata-KINGSTON_SUV400S37240G_50026B7676009089 -s (S/../../../01|L/../../6/19)
+/dev/disk/by-id/ata-KINGSTON_SV300S37A240G_50026B72590EFB9E -s (S/../../../02|L/../../6/21)
+/dev/disk/by-id/ata-ST33000650NS_Z290F06Q -s (S/../../../03|L/../../6/23)

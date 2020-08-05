@@ -1,0 +1,89 @@
+#---------------------------------------------------------------------------------------------------
+# RESTORE ZFS FROM BACKUP
+
+https://victor-sudakov.livejournal.com/328562.html
+
+FreeBSD bare metal restore (GPT, ZFS raidz)
+
+1. Backup ZFS root via snapshot
+
+zfs snapshot -r zroot@backup
+zfs list -t snapshot
+
+mount_smbfs -N -I 192.168.4.1 //simba/MEDIABOX /mnt/mediabox
+cd /mnt/mediabox
+
+zfs send -R zroot@backup | gzip -c > oldbox.zfs_img.gz
+	(pkg install pv && zfs send -R zroot@backup | gzip -c | pv > oldbox.zfs_img.gz)
+zfs destroy -r zroot@backup
+
+2. Bare metal restore to ZFS via LiveCD
+
+camcontrol devlist
+gpart show
+
+gpart create -s gpt da3
+gpart add -s512k -t freebsd-boot da3
+gpart add -s2G -t freebsd-swap -l swap0 da3
+gpart add -t freebsd-zfs -l disk0 da3
+gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i 1 da3
+
+zpool import
+zpool import -N zroot
+zpool list
+zpool destroy zroot(old)
+
+zpool create zroot mirror /dev/gpt/disk{0,1}
+	zpool create zroot raidz /dev/gpt/disk{0,1,2}
+
+mkdir /tmp/mediabox
+mount_smbfs -N -I 192.168.4.1 //simba/MEDIABOX /tmp/mediabox
+
+gzip -dc oldbox.zfs_img.gz | zfs recv -F zroot
+	zfs receive -Fdv zroot < /mnt/backup.zfs
+zpool set bootfs=zroot/ROOT/default zroot
+reboot
+
+zfs destroy -r zroot@backup
+
+#---------------------------------------------------------------------------------------------------
+# REPLACE FAILED ZFS DISK
+
+# Useful commands
+
+    camcontrol devlist
+    gpart show
+    zpool status -x
+    zpool status -v pool_name
+
+# find bad disk
+zpool list
+zpool status -v pool_name
+
+# disable bad disk
+zpool offline -t pool_name bad_disk_name
+If we get "no such device in pool", then find disk id диска with zdb utility and und repeat use id instead name
+
+# replace disk
+
+# get id of old disk (19 symbols)
+zpool status -v pool_name
+
+---------------------------------------------------------------------------------
+	# if disk bootale
+	# Cloning partition table and bootloader install
+	gpart backup worked_disk > part_table.gpt
+	gpart restore -F new_clean_disk < part_table.gpt
+	gpart show
+	gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i 1 new_clean_disk
+
+---------------------------------------------------------------------------------
+# Adding new partition 
+zpool replace pool_name id new_disk_name
+
+---------------------------------------------------------------------------------
+# clean errors
+zpool clear pool_name
+
+# run check
+zpool scrub pool_name

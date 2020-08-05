@@ -1,0 +1,48 @@
+﻿SystemRescueCd is a Linux system on a bootable CD-ROM for repairing your system and recovering your data after a crash. Problem is I deal with machines that don't have CD-ROM's. It's a pain to hook up a USB CD-ROM drive every time I want to boot the CD so I decided to use the instructions on the SystemRescueCd homepage to make a USB stick. I used many of the instructions on that page but I had to come up with a few of my own to make it work for me. Here are my instructions on making a SystemRescueCd bootable USB stick.
+I'm going to be using a USB stick that shows up on my Linux system as /dev/sdb. I am using SystemRescueCd version 1.1.5 for this install.
+Download the latest iso from the SystemRescueCd site. I'm putting mine in /tmp for this example.
+Install the syslinux package on your machine if you don't have it. Use yum for redhat or apt for debian based system. Update Note: It has been brought to my attention (by a nice fellow from Holland) that that the version of syslinux that puts itself on the stick needs to be very close to the one used by SystemRescueCD. So if your using non-compatible version of syslinux and your try to boot you might get the error message "unknown keyword in configuration file". This means it is likely your versions of syslinux are too different (the one you put on the stick is older than the one on the SystemRescueCD). To be sure they are the same you could boot the same version of the SystemRescueCD (from CD) and make your stick from that.
+sudo apt-get install syslinux 
+Plug in your USB stick. Now to destroy the old mbr on USB stick. Remember the examples for the rest of the time will use /dev/sdb as the device (USB stick). Make sure your doing this on the right device or you could destroy your current machines master boot record. Type "dmesg" to find out what device your system says your USB stick is. 
+dd if=/dev/zero of=/dev/sdb bs=512 count=1 
+Next we need to partition the USB stick. We will use parted to do it. The first command is run from the shell prompt. The rest of commands after that should be done at the parted prompt. The first partition will be the big one using NTFS as the filesystem. The second one will be the SystemRescueCD partition. It is also the one that syslinux is going on. Then we make the second partition bootable. Using fat32 for the syslinux partition depends on the version of syslinux your using. Later ones can use fat32. If it's not working for you use fat16. Print your changes to make sure they look right and then quit. This example uses a 32GB flash drive. I'm putting a large NTFS partition first because Windows XP will only mount the first partition on a removable drive (crappy M$).
+sudo parted -a optimal /dev/sdb 
+mklabel msdos
+mkpart primary ntfs 0 31900MB
+mkpart primary fat32 31900MB 100%
+set 2 boot on
+print
+quit
+Force a re-read of the partition table if need be.
+sudo /sbin/blockdev --rereadpt /dev/sdb 
+Put on boot loader (mbr.bin) that came with syslinux package. If you need to find it use the command "find / -name mbr.bin". On Debian it was in the path below.
+sudo dd if=/usr/lib/syslinux/mbr.bin of=/dev/sdb 
+Make the filesystem on the partition of the USB stick.
+sudo mkfs.ntfs -f -L NTFS /dev/sdb1
+sudo mkfs.vfat -F 32 -n SYSRESC /dev/sdb2 
+Make temp dir for mounting USB stick.
+mkdir /tmp/usbstick 
+Mount the USB stick.
+sudo mount /dev/sdb2 /tmp/usbstick
+Make dir for iso mount.
+mkdir /tmp/cdrom 
+Mount the SystemRescueCD iso.
+sudo mount -o loop /tmp/systemrescuecd-x86-1.1.5.iso /tmp/cdrom 
+Copy the needed files from the SystemRescueCD.
+If you are using syslinux-3.52 or newer use these instructions. If not see below.
+sudo cp -r /tmp/cdrom/* /tmp/usbstick/
+sudo mv /tmp/usbstick/isolinux/isolinux.bin /tmp/usbstick/isolinux/syslinux.bin
+sudo mv /tmp/usbstick/isolinux/isolinux.cfg /tmp/usbstick/isolinux/syslinux.cfg
+sudo mv /tmp/usbstick/isolinux /tmp/usbstick/syslinux 
+Umount USB stick.
+sudo umount /tmp/usbstick 
+Install syslinux to the USB keys partition.
+sudo syslinux /dev/sdb2 
+Sync the disk.
+sync 
+Put the USB stick in the machine you want to test on and boot the USB stick (make sure the bios is set to boot the USB stick first).
+Now, we need to edit 2 files. The first is the system boot settings and the second a boot script.
+Let's make the usbkey writable. This assumes that /dev/sda is where your USB stick got mounted. Do a df to see where /cdrom is mounted. That is the USB stick device.
+mount /dev/sda2 -o remount,rw 
+Open the file /mnt/cdrom/syslinux/syslinux.cfg and edit the first line of the script and change it from "default rescuecd" to "default rescuecd setkmap=us" so we don't get the annoying boot message about keyboard map. Lower the boot timeout if you like to 100 msecs also. If you want your image to make a dhcp request on boot add "dodhcp" after the setkmap=us line.
+

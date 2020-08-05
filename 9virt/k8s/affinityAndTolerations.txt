@@ -1,0 +1,56 @@
+cat <<EOF | sudo kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-affinity-pod
+spec:
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - preference:
+          matchExpressions:
+          - key: node-role.kubernetes.io/master
+            operator: In
+            values:
+            - ""
+        weight: 100
+  tolerations:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
+    operator: Equal
+  - key: CriticalAddonsOnly
+    operator: Existsls 
+  containers:
+    - name: test-nfs-container
+      image: redis
+  restartPolicy: Never
+EOF
+
+cat <<EOF | sudo kubectl apply -f -
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cesb-mq
+spec:
+  selector:
+    matchLabels:
+      app: cesb-mq
+  template:
+    metadata:
+      labels:
+        app: cesb-mq
+    spec:
+      affinity:
+         podAntiAffinity:
+           requiredDuringSchedulingIgnoredDuringExecution:
+             - labelSelector:
+                 matchExpressions:
+                   - key: app
+                     operator: In
+                     values:
+                       - cesb-mq
+               topologyKey: kubernetes.io/hostname
+      containers:
+      - name: cesb-mq
+        image: busybox
+EOF

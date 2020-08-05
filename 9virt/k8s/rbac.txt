@@ -1,0 +1,23 @@
+# API
+k get --raw / | less
+k get --raw /api/v1 | jq .resources | less    
+
+minikube delete && time minikube start
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-rc2/aio/deploy/recommended.yaml
+k -n kubernetes-dashboard port-forward svc/kubernetes-dashboard 8000:443
+
+k get clusterrole | egrep -v system
+
+k apply -f colvir-cluster-roles.yaml
+#------------------------------------------------------------------------------------------------------------------
+export ROLE=admin-without-secrets
+export ROLE=view-and-exec
+export ROLE=admin
+export SA_NAME=svasilkov4
+export NAMESPACE=kubernetes-dashboard
+
+k --namespace $NAMESPACE create sa $SA_NAME
+k --namespace $NAMESPACE create clusterrolebinding $SA_NAME --serviceaccount=$NAMESPACE:$SA_NAME --clusterrole=ns-list-only
+k --namespace $NAMESPACE create rolebinding $SA_NAME-$ROLE --serviceaccount=$NAMESPACE:$SA_NAME --clusterrole=$ROLE 
+SECRET=$(k -n $NAMESPACE get secrets | tail -n +2 | grep $SA_NAME | awk '{print $1}')
+k --namespace $NAMESPACE get secret $SECRET -o jsonpath="{.data.token}" | base64 --decode

@@ -1,0 +1,91 @@
+# INSTALLATION
+apt update && apt -y install nut
+udevadm control --reload-rules && udevadm trigger
+cd /etc/nut
+
+###########################################################################################################
+# UPS DRIVER SETUP
+cat <<EOF >> ups.conf
+[APC]
+driver = usbhid-ups
+port = auto
+ignorelb
+override.battery.charge.low = 25
+EOF
+
+upsdrvctl start
+
+###########################################################################################################
+# NUT SERVER SETUP
+
+PASS=$(openssl rand -hex 4)
+
+cat <<EOF >> upsd.users
+[admin]
+        password  = ${PASS}
+        upsmon master
+        actions = SET
+        instcmds = ALL
+EOF
+
+sed -i "/^MODE=/ s/=.*/=standalone/" nut.conf
+systemctl restart nut-server
+
+###########################################################################################################
+# NUT MONITOR SETUP
+cat <<'EOF' >> /usr/local/bin/nut_notify.sh
+#!/bin/bash
+mail -s "$(date +%T) $(hostname) $*" root <<< "$*"
+EOF
+chmod +x /usr/local/bin/nut_notify.sh
+
+sed -i '/^SHUTDOWNCMD/ s/".*/"shutdown now"/' upsmon.conf
+cat <<'EOF' >> upsmon.conf
+MONITOR APC@localhost 1 upsmon ${PASS} master
+NOTIFYCMD "/usr/local/bin/nut_notify.sh"
+NOTIFYFLAG ONLINE       EXEC+SYSLOG
+NOTIFYFLAG ONBATT       EXEC+SYSLOG
+NOTIFYFLAG LOWBATT      EXEC+SYSLOG
+NOTIFYFLAG FSD          EXEC+SYSLOG
+NOTIFYFLAG COMMOK       EXEC+SYSLOG
+NOTIFYFLAG COMMBAD      EXEC+SYSLOG
+NOTIFYFLAG SHUTDOWN     EXEC+SYSLOG
+NOTIFYFLAG REPLBATT     EXEC+SYSLOG
+NOTIFYFLAG NOCOMM       EXEC+SYSLOG
+NOTIFYFLAG NOPARENT     EXEC+SYSLOG
+EOF
+
+unset PASS
+systemctl restart nut-monitor
+
+###########################################################################################################
+# DISABLE BEEPER
+upscmd -l APC
+upscmd -u upsmon APC beeper.disable
+upsc APC ups.beeper.status
+
+###########################################################################################################
+# CHECK RUNTIME
+START=$(date -u +"%s"); while true; do sleep 5; TIME=$(date -u -d "0 $(date -u +"%s") sec - $START sec" +"%H:%M:%S"); CHARGE=$(upsc APC battery.charge); RT=$(upsc APC battery.runtime); echo $TIME $CHARGE% $RT"s"; done
+APC SUA1000l 
+
+# SUA1000l December
+
+19:28:04 100% 16620
+19:30:05 91% 7620
+19:40:06 86% 7260
+19:50:47 74% 6240
+20:00:08 70% 5880
+20:10:09 63% 5280
+20:20:10 54% 4740
+20:30:11 48% 4020
+20:40:12 42% 3540
+20:50:13 31% 2580
+21:00:14 28% 2340
+21:10:15 21% 1740
+21:20:36 13% 1020
+21:30:17 7% 540
+21:40:18 1% 0
+21:40:38 1% 0
+21:40:58 1% 0
+21:46:18 % 

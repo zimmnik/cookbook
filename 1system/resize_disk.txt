@@ -1,0 +1,26 @@
+# Proxmox: add 5G to your virtio0 disk on vmid100
+qm resize 100 virtio0 +5G
+
+# Resize partiton #3 
+parted resizepart 3 100%
+
+# Grab new space for PV
+pvresize /dev/vda3
+# Add fixed space to LV
+lvresize --size +20G --resizefs /dev/xxxx/root
+# Add all space to LV
+lvresize --extents +100%FREE --resizefs /dev/xxxx/root
+
+# descrease fs size
+lvreduce -r -L -15G /dev/Volgroup/lv_root
+
+# pure ext4 over partiton table
+systemctl stop elasticsearch
+df -h && umount /dev/sdb1
+parted /dev/sdb print free
+parted /dev/sdb resizepart 1 100%
+parted /dev/sdb print free
+e2fsck -f /dev/sdb1
+resize2fs /dev/sdb1
+mount /dev/sdb1 && df -h
+systemctl start elasticsearch

@@ -1,0 +1,36 @@
+# WRT WG TUNNEL SERVER
+mkdir /root/wg && cd /root/wg
+umask u=rw,g=,o=
+NAME=clientname; wg genkey | tee ${NAME}.key | wg pubkey > ${NAME}.pub && wg genpsk > ${NAME}.psk
+... wg connection setup + firewall
+
+# CENTOS 8 WG TUNNEL CLIENT
+yum -y update && reboot
+
+yum -y install epel-release
+yum -y config-manager --set-enabled PowerTools
+yum -y copr enable jdoss/wireguard
+yum -y install wireguard-dkms wireguard-tools
+grep wireguard /proc/modules
+
+# https://blogs.gnome.org/thaller/2019/03/15/wireguard-in-networkmanager/
+# https://developer.gnome.org/NetworkManager/stable/nm-settings.html
+
+mkdir /etc/wireguard/ && cd /etc/wireguard
+umask u=rw,g=,o=
+
+cat << 'EOF' > wg0.conf
+[Interface]
+Address = 192.168.77.1/32
+PrivateKey = key
+SaveConfig = true
+
+[Peer]
+PublicKey = key
+PresharedKey = key
+AllowedIPs = 192.168.77.254/32, 10.0.0.222/32
+Endpoint = zimmnik.ru:51820
+PersistentKeepalive = 25
+EOF
+
+nmcli connection import type wireguard file wg0.conf

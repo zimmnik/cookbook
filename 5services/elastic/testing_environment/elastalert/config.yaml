@@ -1,0 +1,14 @@
+es_host: 192.168.99.77.nip.io
+es_port: 9200
+es_username: elastic
+es_password: gMvQbqGZLzbTRrefgp4K
+use_ssl: True
+ca_certs: elasticsearch-ca.pem
+rules_folder: rules
+run_every:
+  seconds: 60
+buffer_time:
+  minutes: 1
+writeback_index: elastalert_status
+alert_time_limit:
+  days: 2

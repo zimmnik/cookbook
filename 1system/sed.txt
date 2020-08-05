@@ -1,0 +1,2 @@
+grep -R -l v1beta2 stolon/ | xargs sed -i 's/v1beta2/v1/g'
+sed -i 's%"ssl" nil%"ssl" "off"%g' stolon/templates/hooks/update-cluster-spec-job.yaml

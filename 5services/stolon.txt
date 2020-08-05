@@ -1,0 +1,122 @@
+# DOCS https://github.com/sorintlab/stolon/tree/master/doc
+# CHART BUGS https://github.com/helm/charts/pulls?utf8=%E2%9C%93&q=is%3Apr+is%3Aopen+stolon
+
+# INSTALL
+helm repo update && helm fetch stable/stolon --version 1.5.0 --untar
+
+grep -R -l v1beta2 stolon/ | xargs sed -i 's/v1beta2/v1/g'
+sed -i 's%"ssl" nil%"ssl" "off"%g' stolon/templates/hooks/update-cluster-spec-job.yaml
+
+helm install --name postgre ./stolon --namespace testing --set \
+image.tag=v0.14.0-pg11,\
+superuserPassword=yandex,\
+replicationPassword=yandex,\
+persistence.storageClassName=nfs-client,\
+keeper.replicaCount=3,\
+proxy.replicaCount=3,\
+sentinel.replicaCount=3
+
+# REMOVE
+sudo helm delete --purge stolon && sudo kubectl delete ns testing
+
+#---------------------------------------------------------------------------------------------------------------------------
+# GET STOLON SETTINGS https://github.com/sorintlab/stolon/blob/master/doc/cluster_spec.md
+k run -it stolonctl --serviceaccount='postgre-stolon' --image=sorintlab/stolon:v0.14.0-pg11 --restart=Never --rm=true -- bash
+export STOLONCTL_STORE_BACKEND=kubernetes
+export STOLONCTL_CLUSTER_NAME=postgre-stolon
+export STOLONCTL_KUBE_RESOURCE_KIND=configmap
+
+apt update && apt -y install less jq
+stolonctl clusterdata read | jq '.' | less
+stolonctl status
+stolonctl spec
+
+exit
+
+#---------------------------------------------------------------------------------------------------------------------------
+# REPLICATION CHECK
+k run -it debug --image=postgres:11 --restart=Never --rm=true -- bash
+psql --host postgre-stolon-proxy --port 5432 postgres -U stolon -W
+SELECT client_addr, state, sync_state, sent_lsn, write_lsn,flush_lsn, replay_lsn FROM pg_stat_replication;
+exit
+#---------------------------------------------------------------------------------------------------------------------------
+# KILL MASTER TEST https://github.com/sorintlab/stolon/tree/master/examples/kubernetes
+
+# FIND MASTER
+alias st="k run -it stolonctl --serviceaccount='postgre-stolon' --image=sorintlab/stolon:v0.14.0-pg11 --restart=Never --rm=true -- \
+stolonctl --cluster-name postgre-stolon --store-backend=kubernetes --kube-resource-kind=configmap status"
+st
+
+# CREATE TABLE
+k run -it debug --image=postgres:11 --restart=Never --rm=true -- \
+psql --host postgre-stolon-proxy --port 5432 postgres -U stolon -W
+CREATE TABLE test (id int primary key not null, value text not null); INSERT INTO test VALUES (1, 'TEST');
+SELECT * FROM test;
+exit
+
+# MAKE STS BACKUP
+k get sts postgre-stolon-keeper -o yaml >> sts.yaml
+
+# BREAK STS
+k delete sts postgre-stolon-keeper --cascade=false
+
+# REMOVE MASTER
+k get pods
+k delete pod postgre-stolon-keeper-1
+
+# STOLON TEST
+st
+
+# SQL test
+k run -it debug --image=postgres:11 --restart=Never --rm=true -- \
+psql --host postgre-stolon-proxy --port 5432 postgres -U stolon -W
+SELECT * FROM test;
+exit
+
+# REVERT BACK
+k apply -f sts.yaml 
+st
+
+#---------------------------------------------------------------------------------------------------------------------------
+# BACKUP AND RESTORE
+
+# Run pod
+k run -it debug --image=postgres:11 --restart=Never --rm=true -- bash
+
+# Add settings
+export PGHOST=postgre-stolon-proxy
+export PGUSER=stolon
+export PGDATABASE=postgres
+
+# Create db, table and one entry
+psql << 'EOF'
+\conninfo
+\list
+CREATE DATABASE demo;
+\c demo
+\conninfo
+CREATE TABLE demotable (id int primary key not null, value text not null);
+INSERT INTO demotable VALUES (1, '');
+SELECT * FROM demotable;
+EOF
+
+# Make backup
+pg_dump --format=directory --file=/mnt/backup demo
+
+# Make some undesirable changes
+psql << 'EOF'
+\c demo
+\conninfo
+INSERT INTO demotable VALUES (2, 'BAD');
+SELECT * FROM demotable;
+EOF
+
+# Restore backup
+pg_restore --if-exists --create --clean -d postgres /mnt/backup
+
+# Our latest changes must disappear
+psql << 'EOF'
+\c demo
+SELECT * FROM demotable;
+EOF
+

@@ -1,0 +1,103 @@
+Firefox in a sandbox with Fedora
+
+There is a really cool utility from the selinux folks called sandbox. It's lets
+you run an application inside a sandbox which has limited permissions on
+the system. The idea being that you could run an untrusted process which
+shouldn't be able to cause any real damage. I dare say these days the
+most untrusted process is a web browser. I know Chrome uses a
+technology similar to this where each tab gets its own sandbox, but I don't
+run Chrome, so my goal is to make Firefox as safe as possible. Plus I'm a
+paranoid nut, so this sort of thing I find really interesting.
+The sanbox program is part of the policycoreutils-python package in
+Fedora. It has the unique feature of being able to run an X application
+inside the sandbox. This is done by using a Xephyr X server. Getting this to
+run Firefox the way I wanted took a bit of work, but it's quite handy now
+that I have it working.
+The biggest advantage I now have are multiple browsers running as my
+user. I have one browser for general browsing. This browser I never enter a
+password into, as I presume some of the sites I visit could be malicious in
+nature.
+My other browser is for trusted sites, like webmail and my bank. I'm able
+to run any number of browsers I wish, since each runs in its own sandbox,
+I don't have to worry about any resource collisions. If I have a questionable
+site to investigate (which happens in the security world fairly often), I just
+run another browser, check the site then close it. The sandbox cleans up
+any mess left behind when I'm done.
+More after the fold.
+Running the sandbox
+Here is the command I use to run firefox in a sandbox:
+sandbox -t sandbox_web_t -i /home/bress/.mozilla -w
+1672x968 -X firefox
+Edit: 2011-09-06
+There is a bug in Fedora 15, you need to add the '-W metacity' to run
+Firefox properly.
+sandbox -t sandbox_web_t -i /home/bress/.mozilla -W metacity
+-w 1672x968 -X firefox
+The "-t sandbox_web_t" tells sandbox which selinux context to use. The "-i
+/home/bress/.mozilla" tells the sandbox to copy the contents of my
+.mozilla directory into the sandbox. This should not have any sensitive
+information in it such as stored passwords and cookies. The goal here is to
+run a neutered browser. The "-w 1672x968" make the Xephyr window fill
+my screen. I found this by trial and error. I suggest you leave out the -w
+initally. The "-X" tells sandbox to launch an X sandbox, and the "firefox" is
+the command to run.
+The first thing to remember is that whatever you do in the sandbox is
+deleted when you close the session. If you want to add bookmarks or
+download things, you need to plan for this. Since each of my sessions pull
+in my ~/.mozilla directory, I just make sure I have the proper bookmarks
+there (I purposely don't save any cookies, as that would be
+counterproductive to security). Downloads can be an issue as well. I
+generally just copy and paste the URL for whatever I need and wget it in a
+seperate terminal outside of the sandbox. If you REALLY need to find your
+file, it's somewhere in ~/.sandbox. You'll likely need to run a find though,
+as each sandbox get a randomly named directory under there.
+I like to remap my caps lock key to be a control key. Xephyr uses its own
+keymap, which means that even though I remap it in GNOME, Xephyr
+doesn't pick this up. I use xmodmap to remap the key in Xephyr. I have a
+file called xephyr-modmap in my home directory. It looks like this:
+1 of 2
+clear Lock
+keycode 0x7e = Control_R
+5/20/17, 1:16 PMFirefox in a sandbox with Fedora - Josh's Blog
+http://www.bress.net/blog/archives/195-Firefox-in-a...
+doesn't pick this up. I use xmodmap to remap the key in Xephyr. I have a
+file called xephyr-modmap in my home directory. It looks like this:
+clear Lock
+keycode 0x7e = Control_R
+add Control = Control_R
+I then run
+DISPLAY=:1 xmodmap xephyr-modmap
+The DISPLAY environment variable defines which X server to connect to.
+This will not always be :1. I've found the easiest way to figure out what
+your X server DISPLAY is, is to open a file called "seremote" in your
+sandboxed home directory. (File->Open in firefox)
+The other big problem I had was dealing with copy and paste issues. I like
+to copy and paste URLs from emails or IRC. Since we're running inside
+Xephyr, the clipboards are not shared (this is good, it prevents bad guys
+from stealing my clipboard contents). I found the xsel application works to
+remedy this (xsel is also the name of the package that installs the utility). I
+wrote two scripts, one called get-clipboard, the other called set-clipboard.
+These let me easily get clipboard data in or out of my browser sessions.
+bress@localhost % cat get-clipboard
+#!/bin/sh
+screen=$1
+xsel --display $screen -p -o | xsel -p -i
+bress@localhost % cat set-clipboard
+#!/bin/sh
+screen=$1
+xsel -p -o | xsel --display $screen -p -i
+So if I want to copy some highlighted text out of my browser running in
+DISPLAY=:1, I would just run "get-clipboard :1". Likewise if I want to get
+some data in, I just run "set-clipboard :1".
+I also adjusted how GNOME opens URLs to account for not having a local
+browser running. If you open "Preferred Applications" in the gnome menu,
+I set my web browser to
+firefox --display=:1 %s
+This will cause the browser running on display :1 to open the URL. This
+does however mean that I MUST run my untrusted browser in X server :1.
+I've been running this setup for quite a while now. The only thing I would
+really like to see is a resizable Xephyr window, but I'm told that's on the
+list and we should see it in the future. Ironically the feature is in RHE6, but
+not Fedora. Obviously you still have to be smart about how you interact
+with web sites. Even with a setup like this, it may be possible for bad
+things to happen, it's just a whole lot harder. Good luck.

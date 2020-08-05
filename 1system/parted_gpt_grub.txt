@@ -1,0 +1,32 @@
+lsblk -o +label,fstype,uuid
+
+parted -l
+parted /dev/sdx print free 
+parted /dev/sdx mklabel gpt
+parted -a optimal /dev/sdx mkpart primary 0% 200M (gpt only)
+parted /dev/sdx set 1 bios_grub on (gpt only)
+parted -a optimal /dev/sdx mkpart primary 200M 512M
+parted /dev/sdx set 2 boot on
+
+fsarchiver -v -j 32 restfs backup.fsa id=0,dest=/dev/md127 id=1,dest=/dev/mapper/colorbiz-root id=2,dest=/dev/mapper/colorbiz-db
+
+mount /dev/mapper/colorbiz-root /mnt/temp
+mount /dev/md127 /mnt/temp/boot
+for i in {dev,sys,proc}; do mount -o bind /$i /mnt/temp/$i; done
+chroot /mnt/temp /bin/bash
+
+mkswap /dev/mapper/colorbiz-swap
+blkid
+vim /etc/fstab
+
+mdadm --detail --scan | awk '/ARRAY/ {print}' >> /etc/mdadm.conf
+vim /etc/mdadm.conf
+
+mdadm --detail /dev/md126 | grep UUID >> /etc/default/grub
+mdadm --detail /dev/md127 | grep UUID >> /etc/default/grub
+vi /etc/default/grub
+grub2-mkconfig -o /boot/grub2/grub.cfg
+
+grep -v rootfs /proc/mounts > /etc/mtab
+mv /boot/grub/device.map /boot/grub/device.map.backup
+grub2-install /dev/sdx

@@ -1,0 +1,1 @@
+elasticsearch.ssl.certificateAuthorities: /usr/share/kibana/config/elasticsearch-ca.pem

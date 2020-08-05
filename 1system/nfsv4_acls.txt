@@ -1,0 +1,8 @@
+setfacl -m u:$login:rwx foldername
+setfacl -d -m u:$login:rwx foldername
+
+setfacl -m g:$group:rwx foldername
+setfacl -d -m g:$group:rwx foldername
+
+setfacl -x g:$otdel foldername
+setfacl -d -x g:$otdel foldername

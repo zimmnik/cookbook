@@ -1,0 +1,24 @@
+#!/bin/bash
+#--------------------------------------------------------------------------------
+#my_dir="$(dirname "$0")"
+#"$my_dir/start_esata.sh"
+#--------------------------------------------------------------------------------
+ROOT="/mnt/data"
+FOLDERS="backup doc foto iso masha music windows"
+dest_folder="/mnt/esata/rsync/"
+#--------------------------------------------------------------------------------
+echo `date`": starting"
+for source_folder in $FOLDERS
+do
+rsync -vrz --progress --compress-level=0 --delete-after $ROOT/$source_folder $dest_folder
+done
+echo `date`": done"
+#--------------------------------------------------------------------------------
+echo Used: `du -sh $dest_folder` \
+Free: `df -h $dest_folder/ | tail -1 | tr -s " " | cut -d " " -f4`
+#--------------------------------------------------------------------------------
+#"$my_dir/stop_esata.sh"
+#--------------------------------------------------------------------------------
+#rsync --exclude="aaa" --exclude="uinstallx.tar.gz" \
+#--progress -vrz --compress-level=0 --delete-after \
+#/mnt/data/tftpboot/ubuntu/trusty/ tftpl:/mnt/data/tftpboot/ubuntu/trusty/

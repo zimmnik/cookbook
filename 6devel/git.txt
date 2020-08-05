@@ -1,0 +1,52 @@
+#------------------------------------------------------------------------------------
+# Git setup
+git config --global user.email "name@mail.box" && \
+git config --global user.name "FirstName LastName" && \
+git config --global credential.helper store && \
+git config --global push.default simple && \
+git config --global alias.ci commit && \
+git config --global alias.hist "log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short"
+
+#------------------------------------------------------------------------------------
+# Create repo and push to gitlab
+git init && echo reponame > README.md && git add . && git commit -m "Initial commit"
+git remote add origin https://gitlab.domain/username/reponame.git
+git push -u --force origin master
+
+#------------------------------------------------------------------------------------
+# Dirty clean project
+git clone https://gitlab.company.sit/group/projectname.git
+cd projectname/
+URL=$(grep url .git/config | cut -d " " -f3)
+rm -rf .git && git init && git add . && git commit -m "Initial commit"
+git remote add origin $URL && git push -u --force origin master
+cd ..
+
+#------------------------------------------------------------------------------------
+# Clone project
+git pull && URL=$(grep url .git/config | cut -d " " -f3 | sed "s/dfcssg/afs/"); echo $URL
+git remote remove origin && git remote add origin $URL && git push -u --force origin master
+
+
+#------------------------------------------------------------------------------------
+# Add tag and push
+echo "PROJECTNAME v0.2.1-build3" > README.md 
+git add -A
+git ci -m "Version updated to v0.2.1-build3"
+git tag v0.2.1-build3
+git push origin : v0.2.1-build3
+
+#------------------------------------------------------------------------------------
+# Undo local commit http://www-cs-students.stanford.edu/~blynn/gitmagic/ch05.html#_8230_and_then_some
+git rebase -i HEAD~2
+#delete the second line within the editor window that pops up
+git push origin +master --force
+
+#------------------------------------------------------------------------------------
+# Undo many commits +remote (Only unprotected branches)
+# https://stackoverflow.com/questions/1463340/revert-multiple-git-commits/1463390#comment1312779_1463390
+git reset --hard A
+git reset --soft @{1}
+git commit
+git push origin HEAD --force
+

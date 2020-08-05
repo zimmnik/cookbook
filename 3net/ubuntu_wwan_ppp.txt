@@ -1,0 +1,69 @@
+aptitude install resolvconf usb-modeswitch ppp comgt gammu libgammu-i18n
+comgt -d /dev/ttyUSB0
+gammu getussd '#102#' | grep balans
+echo "test привет" | gammu sendsms TEXT +79067645346
+gammu geteachsms
+
+nano /etc/ppp/peers/Beeline
+##############################################################
+connect "/usr/sbin/chat -v \
+TIMEOUT 35 \
+ECHO    ON \
+ABORT   '\nBUSY\r' \
+ABORT   '\nERROR\r' \
+ABORT   '\nNO ANSWER\r' \
+ABORT   '\nNO CARRIER\r' \
+ABORT   '\nNO DIALTONE\r' \
+ABORT   '\nRINGING\r\n\r\nRINGING\r' \
+ABORT   '\nUsername/Password Incorrect\r'  \
+''      \rAT \
+OK      'AT+CGDCONT=1,\"IP\",\"internet.beeline.ru\"' \
+OK      ATD*99***1# \
+CONNECT \c \
+"
+#########################################################
+lock
+/dev/ttyUSB0
+crtscts
+921600
+#460800
+#115200
+
+persist
+chap-interval 60
+
+usepeerdns
+defaultroute
+replacedefaultroute
+
+noauth
+######
+# If we have problems
+#user "beeline"
+#password beeline
+#novj
+#novjccomp
+#nobsdcomp
+#nopcomp
+#noaccomp   
+#noipdefault
+#lcp-echo-interval 2
+#lcp-echo-failure 3
+
+
+##############################################################
+# Start & Stop
+pon Beeline & poff
+##############################################################
+# Autostart
+nano /etc/network/interfaces
+auto Beeline
+iface Beeline inet ppp
+        provider Beeline
+##############################################################
+# or
+auto Beeline
+iface Beeline inet manual
+       pre-up /usr/bin/pon Beeline
+       pre-down /usr/bin/poff Beeline
+##############################################################       

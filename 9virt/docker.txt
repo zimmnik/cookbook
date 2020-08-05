@@ -1,0 +1,27 @@
+yum install -y yum-utils device-mapper-persistent-data lvm2
+yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+yum install -y docker-ce docker-ce-cli containerd.io
+systemctl disable firewalld.service 
+systemctl enable docker.service 
+reboot
+
+vim /etc/docker/daemon.json
+cat <<EOF > /etc/docker/daemon2.json
+{
+  "log-driver": "journald"
+}
+EOF
+
+docker run --rm -it alpine ping -c4 prox
+docker run hello-world
+
+docker network create -d macvlan -o parent=eth0 --ip-range=10.0.0.112.28 --subnet=10.0.0.0/24 --gateway=10.0.0.254 homenet
+docker network ls
+docker network inspect homenet | less
+docker run --rm --network=homenet -it alpine /bin/sh
+
+https://github.com/wsargent/docker-cheat-sheet
+
+# docker toolbox
+docker run --name nginx -d -p 8000:80 -v /c/Users/zorg/Desktop/provisioner/kickstart/:/usr/share/nginx/html nginx
+curl http://192.168.99.100:8000/custom.cfg

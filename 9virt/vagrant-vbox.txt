@@ -1,0 +1,7 @@
+yum -y install epel-release
+yum -y install binutils gcc make patch libgomp glibc-headers glibc-devel kernel-headers kernel-devel dkms
+curl -L https://download.virtualbox.org/virtualbox/rpm/el/virtualbox.repo -o /etc/yum.repos.d/virtualbox.repo
+yum -y install VirtualBox-6.1
+/usr/lib/virtualbox/vboxdrv.sh setup
+yum -y install https://releases.hashicorp.com/vagrant/2.2.9/vagrant_2.2.9_x86_64.rpm
+vagrant up --provider=virtualbox

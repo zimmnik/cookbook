@@ -1,0 +1,61 @@
+sudo dnf install java-1.8.0-openjdk-devel
+######################################################################################################
+sudo dnf localinstall jdk-8u171-linux-x64.rpm 
+sudo alternatives --install /usr/bin/java java /usr/java/latest/jre/bin/java 200000
+sudo alternatives --config java
+cp java.desktop ~/.local/share/applications/java.desktop
+
+sudo alternatives --install /usr/bin/javaws javaws /usr/java/latest/jre/bin/javaws 200000
+sudo alternatives --config javaws
+
+sudo alternatives --install /usr/lib64/mozilla/plugins/libjavaplugin.so libjavaplugin.so.x86_64 /usr/java/latest/jre/lib/amd64/libnpjp2.so 200000
+sudo alternatives --install /usr/bin/javac javac /usr/java/latest/bin/javac 200000
+
+sudo alternatives --install /usr/bin/jar jar /usr/java/latest/bin/jar 200000
+sudo alternatives --config jar
+cp java.sh /etc/profile.d/java.sh
+
+######################################################################################################
+sudo curl -o /etc/yum.repos.d/zulu.repo http://repos.azulsystems.com/rhel/zulu.repo
+sudo alternatives --config java
+sudo alternatives --config javac
+sudo sh -c 'echo "export JAVA_HOME=/usr/lib/jvm/zulu-8/" >> /etc/profile.d/java-home.sh'
+######################################################################################################
+
+sudo dnf install libcanberra-gtk2
+mkdir ~/.idea
+tar -zxvf ideaIC-2018.1.4.tar.gz -C ~/.idea
+
+cp idea.desktop ~/.local/share/applications/idea.desktop
+[Desktop Entry]
+Name=Java
+Comment=Java
+GenericName=Java
+Keywords=java
+Exec=java -jar %f
+Terminal=false
+X-MultipleArgs=false
+Type=Application
+MimeType=application/x-java-archive
+StartupNotify=true
+Icon=/usr/java/latest/jre/lib/desktop/icons/hicolor/48x48/apps/sun-java.png
+[Desktop Entry]
+Type=Application
+Terminal=false
+Name=IntelliJ
+Exec=~/.idea/idea-IC-181.5087.20/bin/idea.sh
+Icon=~/.idea/idea-IC-181.5087.20/bin/idea.png
+StartupNotify=true
+
+[Desktop Entry]
+Name=Java
+Comment=Java
+GenericName=Java
+Keywords=java
+Exec=java -jar %f
+Terminal=false
+X-MultipleArgs=false
+Type=Application
+MimeType=application/x-java-archive
+StartupNotify=true
+Icon=/usr/java/latest/jre/lib/desktop/icons/hicolor/48x48/apps/sun-java.png

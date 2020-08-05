@@ -1,0 +1,61 @@
+smbpasswd -a username
+pdbedit -L
+
+[global]
+        workgroup = LOCAL
+        unix charset = UTF-8
+        unix extensions = no
+        security = user
+        map to guest = Bad Password
+        load printers = no
+        domain master = no
+        min receivefile size = 2048
+        use sendfile = true
+        aio read size = 2048
+        aio write size = 2048
+        write cache size = 1024000
+        max xmit = 32768
+        deadtime = 15
+        disable netbios = yes
+        log level = 1 
+        log file = /var/log/samba/%m.log
+        dns proxy = no
+        create mask = 0660
+        directory mask = 0770
+        force create mode = 0660
+        force directory mode = 0770
+        browseable = yes
+
+        logging = systemd@1
+
+        load printers = no
+        show add printer wizard = no
+        printcap name = /dev/null
+        disable spoolss = yes
+
+        vfs objects = full_audit
+        full_audit:prefix = %u|%I
+        full_audit:failure = none
+        full_audit:success = mkdir, rmdir, unlink, write, rename
+        #full_audit:failure = open, mkdir, rmdir, unlink, write, rename
+        read only = no
+        guest ok = no
+[data]
+        path = /stor/data
+	valid users = username
+[share]
+        path = /share
+        guest ok = yes
+	force user = nobody
+	force group = nobody
+	inherit permissions = yes
+
+# RSYSLOG
+#RULES ####
+if ( $programname startswith "smbd" ) then {
+    action(type="omfile" file="/var/log/samba/samba.log" flushOnTXEnd="off")
+    stop
+}
+# Log all kernel messages to the console.
+# Logging much else clutters up the screen.
+#kern.* 

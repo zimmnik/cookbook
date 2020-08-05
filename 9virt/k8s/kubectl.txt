@@ -1,0 +1,26 @@
+sudo bash -c 'cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF'
+sudo yum -y install kubectl bash-completion
+kubectl version --short
+sudo sh -c 'kubectl completion bash > /etc/bash_completion.d/kubectl'
+echo 'alias k=kubectl' >> ~/.bashrc
+echo 'complete -F __start_kubectl k' >>~/.bashrc
+echo "alias kg='kubectl config get-contexts'"
+echo "alias kgs='kubectl config use-context'"
+
+kubectl config set-cluster dev --insecure-skip-tls-verify=true --server=https://1.1.9.38:6443
+kubectl config set-cluster corp --insecure-skip-tls-verify=false --certificate-authority=$HOME/.kube/corp_ca.crt
+kubectl config set-credentials dev-admin --username=kube --password=password
+kubectl config set-context dev-default --user=dev-admin --namespace=default --cluster=dev
+kubectl config use dev-default
+kubectl config view
+
+# config-info
+ls -alh ~/.kube && env | grep KUBECONFIG

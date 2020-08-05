@@ -1,0 +1,2 @@
+export LANG=ru_RU.UTF-8
+7z -mx=9 -mhe=on -pPASS -ssc a destination/archive.7z source/folder -xr!*.rar 

@@ -1,0 +1,82 @@
+https://pthree.org/2012/12/04/zfs-administration-part-i-vdevs/
+https://github.com/zfsonlinux/zfs/wiki/FAQ#selecting-dev-names-when-creating-a-pool
+http://open-zfs.org/wiki/Performance_tuning#RAID-Z_stripe_width
+https://habr.com/en/post/314506/
+
+#-----------------------------------------------------------------------------------
+yum localinstall http://download.zfsonlinux.org/epel/zfs-release.el7_6.noarch.rpm
+vim /etc/yum.repos.d/zfs.repo
+  [zfs]
+  enabled=0
+  [zfs-kmod]
+  enabled=1
+yum install zfs
+modprobe zfs
+
+#-----------------------------------------------------------------------------------
+parted /dev/sda unit MiB print free
+parted /dev/sda unit MiB mkpart primary 16938 100%
+zpool create stor -O atime=off -O compression=off -m /mnt/stor raidz2 A B C D
+
+#-----------------------------------------------------------------------------------
+yum install postfix
+echo "root:           user@mail.box" >> /etc/aliases
+newaliases
+systemctl enable postfix --now
+echo TEST | sendmail root
+journalctl -f
+
+vim /etc/zfs/zed.d/zed.rc
+  ZED_EMAIL_ADDR="root"
+  ZED_EMAIL_PROG="sendmail"
+  ZED_EMAIL_OPTS="-s '@SUBJECT@' @ADDRESS@"
+  ZED_NOTIFY_VERBOSE=1
+  ZED_USE_ENCLOSURE_LEDS=1
+  ZED_SCRUB_AFTER_RESILVER=1
+
+vim /etc/zfs/zed.d/zed-functions.sh
+...
+zed_notify_email()
+{
+    ...
+    echo -e "Subject:${subject} \n\n $(cat ${pathname})\n" | sendmail ${ZED_EMAIL_ADDR}
+    #eval "${ZED_EMAIL_PROG}" ${ZED_EMAIL_OPTS} < "${pathname}" >/dev/null 2>&1
+    ...
+
+zpool scrub stor
+
+#-----------------------------------------------------------------------------------
+cat << 'EOF' >> /etc/zfs/scrub 
+#!/bin/sh -eu
+# Scrub all healthy pools.
+zpool list -H -o health,name 2>&1 | \
+        awk 'BEGIN {FS="\t"} {if ($1 ~ /^ONLINE/) print $2}' | \
+while read pool
+do
+        zpool scrub "$pool"
+done
+EOF
+chmod +x /etc/zfs/scrub
+
+cat << 'EOF' >> /etc/cron.d/zfs-check
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+01 13 * * * root [ $(date +\%w) -eq 2 ] && [ -x /etc/zfs/scrub ] && /etc/zfs/scrub
+EOF
+
+#-----------------------------------------------------------------------------------
+zpool import tank
+zpool status tank
+zpool destroy tank
+
+#-----------------------------------------------------------------------------------
+zfs get mountpoint
+zfs set mountpoint=/foo_mount tank
+zfs mount tank
+
+#-----------------------------------------------------------------------------------
+echo "options zfs zfs_arc_max=2014876672" >> /etc/modprobe.d/zfs.conf
+
+#-----------------------------------------------------------------------------------
+zfs snapshot rpool/data/subvol-104-disk-2@backup
+zfs list -t snapshot
+zfs destroy rpool/data/subvol-104-disk-2@backup

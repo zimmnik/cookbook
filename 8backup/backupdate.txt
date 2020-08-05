@@ -1,0 +1,223 @@
+#!/bin/bash
+#VERSION=200202
+
+#ANACRONTAB
+#START_HOURS_RANGE=0-7
+#@daily 25 backup bash -c "/usr/local/bin/backupdate.sh > /run/backup.log 2>&1 || cat /run/backup.log | tee >(systemd-cat -t backup)"
+#---------------------------------------------------------------------------------------------
+check_depencences () {
+echo -e "\ncheck_depencences"
+which sshfs
+which 7za
+which par2verify
+which par2create
+which lvcreate
+which lvremove
+which yum
+which curl
+which tar
+}
+
+#---------------------------------------------------------------------------------------------
+locking () {
+echo -e "\n$(date -Iminutes) locking"
+if [[ -f /tmp/backupdate.lock ]]; then
+  echo "backup already running or crashed"
+  return 1
+else
+  touch /tmp/backupdate.lock
+  echo "created /tmp/backupdate.lock"
+fi
+}
+unlocking () {
+echo -e "\n$(date -Iminutes) unlocking"
+rm -v /tmp/backupdate.lock
+}
+
+#---------------------------------------------------------------------------------------------
+mount_local () {
+mount -v /dev/disk/by-id/ata-WDC_WD3200AAKX-001CA0_WD-WCAYUCX35407-part1 /mnt/backup_local
+}
+umount_local () {
+cd / && umount -v /mnt/backup_local
+}
+
+#---------------------------------------------------------------------------------------------
+mount_remote () {
+sshfs backup@zimmnik.ru:/stor/backup/colly /mnt/backup_remote -p 2222 -o IdentityFile=/root/.ssh/fs.key
+echo "mount: backup@zimmnik.ru:/stor/backup/$SYSNAME mounted on /mnt/backup_remote"
+}
+umount_remote () {
+cd / && umount -v /mnt/backup_remote
+}
+
+#---------------------------------------------------------------------------------------------
+make_stage_folders () {
+mkdir -v data || true
+mkdir -v data/latest || true
+mkdir -v data/previous || true
+mkdir -v system || true
+mkdir -v system/latest || true
+mkdir -v system/previous || true
+}
+preparation () {
+echo -e "\npreparation"
+
+mkdir -v /mnt/backup_local || true
+mount_local
+  cd /mnt/backup_local && pwd
+  make_stage_folders
+  cp -fv /usr/local/bin/backupdate.sh .
+
+  cd /mnt/backup_local/system && pwd
+  if ! [[ -f fsarchiver-static-0.8.5.x86_64 ]]; then
+    echo "Installing fsarchiver..."
+    curl --silent --show-error --location --remote-name https://github.com/fdupoux/fsarchiver/releases/download/0.8.5/fsarchiver-static-0.8.5.x86_64.tar.gz
+    tar --extract --file=fsarchiver-static-0.8.5.x86_64.tar.gz --strip-components 1 --no-same-owner
+    rm -v fsarchiver-static-0.8.5.x86_64.tar.gz
+    echo "Done"
+  else
+    echo "Fsarchiver: OK"
+  fi
+umount_local
+
+mkdir -v /mnt/backup_remote || true
+mount_remote
+  cd /mnt/backup_remote && pwd
+  make_stage_folders
+  cp -fv /usr/local/bin/backupdate.sh .
+umount_remote
+}
+
+#---------------------------------------------------------------------------------------------
+run_7z () {
+time 7za a -ssc latest/data-backup-$DATE.7z \
+/mnt/data-snap/Desktop/ \
+/mnt/data-snap/doc/ \
+/mnt/root-snap/home/$USER/.config/chromium/Default/ \
+/mnt/root-snap/home/$USER/.config/keepassxc/ \
+/mnt/root-snap/home/$USER/.mozilla/ \
+/mnt/root-snap/home/$USER/.ssh/
+}
+backup_data () {
+echo -e "\nbackup_data"
+mount_local
+  lvcreate -s -n root-snap -L4G /dev/$SYSNAME/root
+    lvcreate -s -n data-snap -L4G /dev/$SYSNAME/data
+        mkdir -v /mnt/root-snap /mnt/data-snap
+          mount -v -o ro /dev/$SYSNAME/root-snap /mnt/root-snap
+            mount -v -o ro /dev/$SYSNAME/data-snap /mnt/data-snap
+              cd /mnt/backup_local/data && pwd
+              run_7z
+            umount -v /mnt/data-snap
+          umount -v /mnt/root-snap
+        rm -r /mnt/root-snap /mnt/data-snap
+    lvremove -A y -f /dev/$SYSNAME/data-snap
+  lvremove -A y -f /dev/$SYSNAME/root-snap
+  time par2create -r100 -n1 -t4 -T4 -q latest/data-backup-$DATE.7z
+  mount_remote
+    cd /mnt/backup_remote/data/latest && pwd
+    time cp -v /mnt/backup_local/data/latest/data-backup-$DATE.7z .
+  umount_remote
+umount_local
+}
+
+#---------------------------------------------------------------------------------------------
+run_fsarchiver () {
+time ./fsarchiver-static-0.8.5.x86_64 \
+--allow-rw-mounted --zstd=19 --jobs=4 \
+--exclude=/var/lib/containers \
+--exclude=/home/$USER/.local/share/containers \
+savefs latest/system-backup-$DATE.fsa \
+/dev/disk/by-id/ata-Samsung_SSD_860_EVO_250GB_S4BFNG0M915711V-part1 \
+/dev/disk/by-id/ata-Samsung_SSD_860_EVO_250GB_S4BFNG0M915711V-part2 \
+/dev/$SYSNAME/root-snap
+}
+backup_system () {
+echo -e "\nbackup_system"
+mount_local
+  lvcreate -s -n root-snap -L4G /dev/$SYSNAME/root
+    cd /mnt/backup_local/system && pwd
+    run_fsarchiver
+  lvremove -A y -f /dev/$SYSNAME/root-snap
+  time par2create -r100 -n1 -t4 -T4 -q latest/system-backup-$DATE.fsa
+  mount_remote
+    cd /mnt/backup_remote/system/latest && pwd
+    time cp -v /mnt/backup_local/system/latest/system-backup-$DATE.fsa .
+  umount_remote
+umount_local
+}
+
+#---------------------------------------------------------------------------------------------
+check() {
+echo -e "\ncheck_local"
+mount_local
+  cd /mnt/backup_local && pwd
+  par2verify -q data/latest/*.7z.par2
+  par2verify -q system/latest/*.fsa.par2
+umount_local
+}
+
+#---------------------------------------------------------------------------------------------
+rotate_folders () {
+rm -v -rf previous/ && sleep 1
+mv -v latest/ previous
+mkdir -v latest
+}
+rotate() {
+echo -e "\nrotate"
+mount_local
+  cd /mnt/backup_local/data && pwd
+  rotate_folders
+  cd /mnt/backup_local/system && pwd
+  rotate_folders
+umount_local
+mount_remote
+  cd /mnt/backup_remote/data && pwd
+  rotate_folders
+  cd /mnt/backup_remote/system && pwd
+  rotate_folders
+umount_remote
+}
+
+#---------------------------------------------------------------------------------------------
+update_system () {
+echo -e "\nupdate_system"
+if grep -q -E 'NAME=Fedora' /etc/os-release; then
+  OPT="--bugfix --enhancement --security"
+else
+  unset OPT
+fi
+yum $OPT --refresh check-update || true
+if [ "$?" -eq 100 ]; then
+  echo "Installing new packages..."
+  yum --assumeyes $OPT upgrade | sendmail root
+  #https://gitlab.gnome.org/World/ShellExtensions/desktop-icons/issues/137#note_677618
+  setcap -r /usr/bin/gnome-shell > /dev/null 2>&1 || true
+  echo "Rebooting ..."
+  sleep 60 && reboot
+else
+  echo "New packages is absent"
+fi
+}
+
+#---------------------------------------------------------------------------------------------
+DATE=$(date -I)
+SYSNAME=colly
+USER=svasilkov
+
+set -e
+check_depencences
+locking
+preparation
+if [[ $(date +%u) -eq 1 ]]; then
+  check
+  rotate
+  backup_data
+  backup_system
+  unlocking
+  update_system
+else
+  backup_data
+  unlocking
+fi

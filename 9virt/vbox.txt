@@ -1,0 +1,12 @@
+sudo yum -y update && reboot
+sudo yum -y install epel-release
+sudo yum -y install gcc kernel kernel-devel kernel-headers dkms make bzip2 perl
+cd /run/media/${USER}/VBox_GAs_XXX/
+sudo ./VBoxLinuxAdditions.run
+sudo reboot
+
+vboxmanage list vms
+vboxmanage controlvm box2betaNode poweroff
+vboxmanage snapshot box2betaNode list
+vboxmanage snapshot box2betaNode restore common_ready
+vboxmanage startvm --type=headless box2betaNode

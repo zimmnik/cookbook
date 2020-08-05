@@ -1,0 +1,141 @@
+# Redisbench
+apt update && apt install golang git
+git clone https://github.com/panjiang/redisbench.git
+./redisbench/rescripts/build-all.sh
+./redisbench/release/redisbench-linux-amd64 -cluster=true -a 10.233.117.110:6379,10.233.117.108:6379,10.233.113.107:6379 -c 32 -n 200000
+
+#----------------------------------------------------------------
+# Redis manifests
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis
+  labels:
+    app: redis
+data:
+  fix-ip.sh: |
+    #!/bin/sh
+    CLUSTER_CONFIG="/data/nodes.conf"
+    if [ -f ${CLUSTER_CONFIG} ]; then
+      if [ -z "${POD_IP}" ]; then 
+        echo "Unable to determine Pod IP address!"
+        exit 1
+      fi
+      echo "Updating my IP to ${POD_IP} in ${CLUSTER_CONFIG}"
+      sed -i.bak -e "/myself/ s/[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/${POD_IP}/" ${CLUSTER_CONFIG}
+    fi
+    exec "$@"
+  redis.conf: |+
+    cluster-enabled yes
+    cluster-require-full-coverage no
+    cluster-node-timeout 1000
+    cluster-slave-validity-factor 2
+    cluster-migration-barrier 1
+    protected-mode no
+    maxmemory 900mb
+    maxmemory-policy allkeys-lru
+    cluster-config-file /data/nodes.conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  labels:
+    app: redis
+spec:
+  ports:
+    - name: client
+      port: 6379
+      protocol: TCP
+      targetPort: 6379
+    - name: cluster
+      port: 16379
+      protocol: TCP
+      targetPort: 16379
+  selector:
+    app: redis
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  labels:
+    app: redis
+spec:
+  serviceName: redis
+  replicas: 6
+  selector:
+    matchLabels:
+      app: redis
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        ci-last-updated: __CI_LAST_UPDATE__
+      labels:
+        app: redis
+    spec:
+      imagePullSecrets:
+        - name: regsecret   
+      containers:
+      - name: redis
+        image: redis:5.0.7
+        command: ["/conf/fix-ip.sh", "redis-server", "/conf/redis.conf"]
+        ports:
+        - containerPort: 6379
+          name: client
+        - containerPort: 16379
+          name: cluster
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "0.1"
+          limits:
+            memory: "1024Mi"
+            cpu: "0.5"
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "redis-cli -h $(hostname) ping"
+          initialDelaySeconds: 15
+          timeoutSeconds: 5
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "redis-cli -h $(hostname) ping"
+          initialDelaySeconds: 20
+          periodSeconds: 3
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        volumeMounts:
+        - name: conf
+          mountPath: /conf
+          readOnly: false
+        - name: redis
+          mountPath: /data
+          readOnly: false
+      volumes:
+      - name: conf
+        configMap:
+          name: redis
+          defaultMode: 0755
+  volumeClaimTemplates:
+  - metadata:
+      name: redis
+      labels:
+        app: redis
+    spec:
+      storageClassName: nfs-client
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Mi

@@ -1,0 +1,20 @@
+cat <<EOF | sudo kubectl apply -f -
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: push-text-into-stdout-job
+  labels:
+    app: elastalert
+spec:
+  template:
+    metadata:
+      name: push-text-into-stdout-pod
+      labels:
+        app: elastalert
+    spec:
+      containers:
+      - name: push-text-into-stdout-container
+        image: busybox
+        command: ["echo", "DEBUGMESSAGE"]
+      restartPolicy: OnFailure
+EOF

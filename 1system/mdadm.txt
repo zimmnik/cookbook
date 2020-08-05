@@ -1,0 +1,23 @@
+# Replacing failed disk on softraid mdadm
+
+    Shutdown host
+    Disconnect san or local storage
+    Replace disk
+    Boot from livecd
+
+    sgdisk --backup=table /dev/old_worked_disk
+    sgdisk --load-backup=table /dev/new_clean_disk
+
+    cat /proc/mdstat
+    mdadm --manage /dev/mdXXX -a /dev/new_clean_disk_partition
+    watch cat /proc/mdstat
+
+# if mdadm is bootable
+
+    mount /dev/old_worked_disk /mnt/temp
+    mount /dev/old_worked_disk_boot /mnt/temp/boot
+    for i in {dev,sys,proc}; do mount -o bind /$i /mnt/temp/$i; done
+    chroot /mnt/temp /bin/bash
+    grep -v rootfs /proc/mounts > /etc/mtab
+    mv /boot/grub/device.map /boot/grub/device.map.backup
+    grub-install --no-floppy /dev/new_clean_disk

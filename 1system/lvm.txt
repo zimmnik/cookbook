@@ -1,0 +1,28 @@
+lsscsi -s
+lsblk -f
+parted -l
+parted /dev/sdb mklabel msdos
+parted -a optimal /dev/sdb mkpart primary 0% 100%
+lsblk -f
+pvcreate /dev/sdb1
+vgcreate vg_es /dev/sdb1
+lvcreate -L 100G -n lv_es vg_es
+mkfs.ext4 /dev/vg_es/lv_es 
+mkdir -p /mnt/disks/lv_es
+echo "/dev/mapper/vg_es-lv_es /mnt/disks/lv_es defaults 0 0" >> /etc/fstab
+mount /dev/vg_es/lv_es 
+
+
+# filter lvm scan
+vi /etc/lvm/lvm.conf
+	preferred_names = []
+	global_filter = [ "a|/dev/disk/by-id/ata-HYPERDISK_SDOM_140400006506-part2|", "r/.*/" ]
+pvscan -vv 2>&1 | less
+dracut -fv /boot/initramfs-4.18.0-80.11.2.el8_0.x86_64.img 4.18.0-80.11.2.el8_0.x86_64
+
+# snapshot management
+vgs -a
+lvcreate -s -L 2G -n snap /dev/vg_machine/root
+lvremove /dev/vg_machine/snap
+lvconvert –merge /dev/vg_machine/snap
+lvs -a

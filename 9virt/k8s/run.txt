@@ -1,0 +1,17 @@
+# run command on pod
+sudo kubectl exec -it pod/fortebank-mq-2 -n fortebank -- bash
+
+# create, run and remove pod
+sudo kubectl run -it debug --image=centos --restart=Never --rm=true --overrides='{"spec":{"nodeName":"k8s-02-node04"}}' -- bash
+
+# create and run pod with while loop
+NUM=4 && sudo kubectl run debug-pod-$NUM --image=centos --restart=Never \
+--overrides='{ "apiVersion": "v1", "spec": { "template": { "spec": { "nodeSelector": { "kubernetes.io/hostname": "k8s-02-node0$NUM" } } } } }' \
+--command -- bash -c 'while true; do echo "MARKER_DEBUG `TZ=Europe/Moscow date`"; sleep 15; done'
+
+NODE=k8s-02-node04 && sudo kubectl delete pod debug-pod-$NODE --now
+
+while true; do echo "MARKER_DEBUG `date`"; sleep 2; done
+
+# wait until pod ready
+time  sudo kubectl -n fortebank wait --for=condition=Ready pod/fortebank-mq-2

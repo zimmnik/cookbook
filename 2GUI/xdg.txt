@@ -1,0 +1,4 @@
+#https://wiki.archlinux.org/index.php/XDG%20user%20directories
+sudo yum -y install xdg-user-dirs
+xdg-user-dirs-update --set DOWNLOAD ~/Desktop/Загрузки/
+

@@ -1,0 +1,5 @@
+#see content pem certificate
+openssl x509 -inform pem -noout -text -in cert.crt
+
+#see content certificate from site
+echo | openssl s_client -showcerts -servername example.com -connect 1.1.9.38:6443 2>/dev/null | openssl x509 -inform pem -noout -text | grep Not

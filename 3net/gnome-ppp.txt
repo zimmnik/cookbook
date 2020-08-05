@@ -1,0 +1,3 @@
+sudo dnf install ModemManager usb_modeswitch NetworkManager-ppp
+logout
+

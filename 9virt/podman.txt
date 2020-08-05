@@ -1,0 +1,86 @@
+yum -y install @"Container Management"
+touch /etc/containers/nodocker
+
+sed -i "s/iptables/firewalld/" /etc/cni/net.d/87-podman-bridge.conflist
+#ip link delete cni-podman0
+
+#rootless only
+sudo sysctl -w "net.ipv4.ping_group_range=0 2000000"
+sudo sh -c 'echo "net.ipv4.ping_group_range = 0 2000000" > /etc/sysctl.d/podman_ping.conf'
+
+cat << 'EOF' >> Dockerfile && docker build -t debug .
+FROM debian
+RUN apt update && apt -y install nmap dnsutils vim less
+EOF
+
+docker run -it --rm debug ping ya.ru
+docker run -it --rm -v ~/Desktop/temp:/mnt:Z python:2 bash
+
+docker run --name nginx -dP -v ~/Desktop/provisioner/kickstart:/usr/share/nginx/html:Z,ro nginx:stable
+docker port -l
+docker rm -f nginx
+
+########################################################################
+sudo setsebool -P container_manage_cgroup true
+
+FROM centos:8
+RUN systemctl disable kdump.service
+RUN yum makecache
+RUN yum -y install httpd; \
+    systemctl enable httpd
+RUN yum clean all
+CMD ["/usr/sbin/init"]
+
+########################################################################
+#CNI MACVLAN
+https://github.com/containernetworking/plugins/issues/435
+
+cat << 'EOF' >> /etc/systemd/system/io.podman.dhcp.socket 
+[Unit]
+Description=DHCP Client for CNI
+
+[Socket]
+ListenStream=%t/cni/dhcp.sock
+SocketMode=0600
+
+[Install]
+WantedBy=sockets.target
+EOF
+
+cat << 'EOF' >> /etc/systemd/system/io.podman.dhcp.service
+[Unit]
+Description=DHCP Client CNI Service
+Requires=io.podman.dhcp.socket
+After=io.podman.dhcp.socket
+
+[Service]
+Type=simple
+ExecStart=/usr/libexec/cni/dhcp daemon
+TimeoutStopSec=30
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
+Also=io.podman.dhcp.socket
+EOF
+
+systemctl --now enable io.podman.dhcp.socket
+
+cat << 'EOF' >> /etc/cni/net.d/88-podman-macvlan.conflist 
+{
+    "cniVersion": "0.4.0",
+    "name": "macvlan",
+    "plugins": [
+        {
+            "type": "macvlan",
+            "master": "enp4s0",
+            "ipam": {
+                    "type": "dhcp"
+            }
+        }
+    ]
+}
+EOF
+
+docker run --name nginx --network macvlan --detach --hostname=nginx.home.local nginx
+

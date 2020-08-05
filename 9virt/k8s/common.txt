@@ -1,0 +1,71 @@
+# supported objects
+#sudo kubectl api-versions
+
+#fields help
+sudo kubectl explain pods.spec.hostAliases
+
+#----------------------------------------------------------------------
+# cluster-info
+sudo kubectl version --short && \
+sudo kubectl cluster-info && \
+sudo kubectl get nodes -o wide
+
+# list global objects
+sudo kubectl api-resources --namespaced=false
+
+# list namespaces
+sudo kubectl get namespaces
+
+# events monitoring
+sudo kubectl get events --all-namespaces -w
+sudo kubectl -n logging get events --field-selector involvedObject.name=elastalert-server-0
+
+#pods on node
+sudo kubectl get pods --all-namespaces -o wide --field-selector spec.nodeName=k8s-02-node01
+#----------------------------------------------------------------------
+# all objects in namespace
+sudo kubectl api-resources --namespaced=true -n fortebank
+
+NS=kubernetes-dashboard && sudo kubectl -n $NS api-resources --namespaced=true -o name | sudo xargs --verbose -I {} kubectl -n $NS get {} --show-kind --ignore-not-found 2>&1 | less
+
+# search by name
+sudo kubectl api-resources -o name | sudo xargs --verbose -I {} kubectl get {} --show-kind --ignore-not-found --all-namespaces 2>&1 | grep dash
+
+# get main objects
+sudo kubectl get all,pvc -o wide -n kubernetes-dashboard | less
+
+# monitoring events on sts
+sudo kubectl -n fortebank get events sts/fortebank-mq -w
+
+# clean up persistentVolume
+sudo kubectl -n fortebank scale --replicas=0 sts/forebank-mq 
+time sudo kubectl -n fortebank rollout status sts/fortebank-mq -R -w
+sudo kubectl -n fortebank delete pvc/forebank-mq-pvc
+
+#------------------------------------------------------------------
+
+sudo kubectl create configmap demo --dry-run --from-file config.json,elastalert.yaml -o yaml | less
+#----------------------------------------------------------------------
+# pod list monitoring
+watch 'sudo kubectl -n fortebank get pod -o wide'
+sudo kubectl get pods --show-labels -n kubernetes-dashboard
+
+# get pod info
+sudo kubectl -n fortebank get pod -o yaml | less
+sudo kubectl -n fortebank top pod
+sudo kubectl -n fortebank describe pod/fortebank-mq-0
+
+# monitoring logs on pod  
+sudo kubectl get event --field-selector involvedObject.name=kubernetes-dashboard -n kube-system
+sudo kubectl -n fortebank logs fortebank-mq-1 -f
+NAME=k8s-02-node01 && \
+NS=`sudo kubectl get pods -n logging -l app=fluent-bit -o=custom-columns=NAME:.metadata.name --no-headers --field-selector spec.nodeName=$NAME` && \
+sudo kubectl logs $NS -n logging
+
+sudo kubectl -n logging logs pod/grafana-68df5f7c4c-dfhz9 -c init-chown-data
+
+#port forward
+sudo kubectl -n testing port-forward debug 8089:8089
+
+#file copy
+kubectl -n testing cp C:\file.py failover-devel:/usr/local/bin/file.py

@@ -1,0 +1,45 @@
+https://github.com/helm/charts/tree/master/stable/nfs-client-provisioner
+
+ip=10.100.1.102::10.100.1.254:24:nfs-server:eth0:none
+nameserver=1.1.1.10
+nameserver=1.1.1.90
+
+sudo helm install --name nfs-client-provisioner --namespace=kube--set nfs.server=10.100.1.102 --set nfs.path=/stor stable/nfs-client-provisioner
+
+cat <<EOF > pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: test-nfs-pvc
+  namespace: default
+  annotations:
+    debug: "1"
+spec:
+  storageClassName: nfs-client
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Mi
+EOF
+sudo kubectl apply -f pvc.yaml
+
+cat <<EOF > pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-nfs-pod
+spec:
+  volumes:
+    - name: test-nfs-storage
+      persistentVolumeClaim:
+        claimName: test-nfs-pvc
+  containers:
+    - name: test-nfs-container
+      image: redis
+      volumeMounts:
+        - mountPath: "/stor"
+          name: test-nfs-storage
+  restartPolicy: Never
+EOF
+sudo kubectl apply -f pod.yaml

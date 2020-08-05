@@ -1,0 +1,55 @@
+#!/bin/bash
+
+#---------------------------------------------------------------------------------------------------------------------------------------
+# FUNCTIONS
+final (){
+	sleep 30 && \
+	umount -v /mnt/backup 2>&1 | /usr/bin/logger -i -t backup && \
+	umount -v /mnt/snapshot 2>&1 | /usr/bin/logger -i -t backup && \
+	lvremove -v --force /dev/mapper/colorbiz-dbsnap 2>&1 | /usr/bin/logger -i -t backup
+	if [[ $? -ne 0 ]] ; then
+		echo "Something is broken at the end"
+		exit 2
+	fi
+}
+
+#---------------------------------------------------------------------------------------------------------------------------------------
+# PRE_RUN
+echo "Starting backup script"  2>&1 | /usr/bin/logger -i -t backup
+
+psql --username=postgres -c CHECKPOINT && | /usr/bin/logger -i -t backup && \
+lvcreate -v --snapshot --name dbsnap -L 16G /dev/mapper/colorbiz-db 2>&1 | /usr/bin/logger -i -t backup && \
+mount -v --options ro /dev/mapper/colorbiz-dbsnap /mnt/snapshot 2>&1 | /usr/bin/logger -i -t backup && \
+mount -v UUID=8adb7de7-27b2-48c5-8373-bcf157339c75 /mnt/backup 2>&1 | /usr/bin/logger -i -t backup
+
+if [[ $? -ne 0 ]] ; then
+	echo "Something is broken at the beginning"
+	final
+	exit 2
+fi
+
+#---------------------------------------------------------------------------------------------------------------------------------------
+# CLEANING
+free_gb=$(($(stat -f --format="%a*%S" /mnt/backup)/1024/1024/1024))
+
+if (( "$free_gb" < 200 )); then
+	most_old_file=`find /mnt/backup/ -maxdepth 1 -not -type d -printf "%T@ %p\n" | sort -n -r| tail -1 | sed -r 's/[0-9]+.[0-9]+ //'`
+	rm -v --force $most_old_file 2>&1 | /usr/bin/logger -i -t backup
+fi
+
+#---------------------------------------------------------------------------------------------------------------------------------------
+# RUN
+tar cfP - \
+/mnt/snapshot \
+| 7za a -mx=9 -si /mnt/backup/resolve-db-`date +%F-%R`.tar.7z >> /dev/null
+
+if [[ $? -ne 0 ]] ; then
+	date
+	echo "Something is broken during archiving"
+	final	
+	exit 2
+fi
+
+#---------------------------------------------------------------------------------------------------------------------------------------
+# POST_RUN
+final

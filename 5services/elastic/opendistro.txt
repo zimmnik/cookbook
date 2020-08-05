@@ -1,0 +1,159 @@
+# Building kibana Alerting plugin from sources
+sudo kubectl run -it od-kibana-plugin-builder --image=debian:buster --restart=Never --rm=true --command -- bash
+
+# SYSTEM STAGE
+apt update && apt -y install less vim tree curl git python
+adduser --disabled-password --gecos "" builder && su builder
+
+# UTILITES STAGE
+cd ~ && git clone https://github.com/nvm-sh/nvm.git .nvm && \
+&& cd ~/.nvm/ && git checkout v0.35.1 && \
+. nvm.sh && nvm install 10.15.2 && \
+npm install yarn@1.19.1
+
+# KIBANA STAGE
+cd ~ && git clone https://gitlab.domain/user/kibana.git && \
+cd ~/kibana/ && git checkout v7.2.0 &&\
+nvm use && \
+npx yarn kbn bootstrap
+
+# ALERTING STAGE
+cd ~ && mkdir kibana-extra
+git clone https://gitlab.domain/user/alerting-kibana-plugin.git kibana-extra/opendistro-elasticsearch-alerting-kibana && \
+cd kibana-extra/opendistro-elasticsearch-alerting-kibana && \
+git checkout git checkout mail_destination && \
+npx yarn kbn bootstrap && npx yarn build
+
+#-------------------------------------------------------------------------------------------------------------------------------
+# Building elasticsearch Alerting plugin from sources
+sudo kubectl run -it od-elastic-plugin-builder --image=openjdk:12 --restart=Never --rm=true --command -- bash
+
+yum -y install vim tree less git
+adduser builder && su builder
+export JAVA_HOME=/usr/java/openjdk-12
+cd ~ && git clone https://gitlab.domain/user/alerting.git
+cd alerting && git checkout mail_destination
+sed -i '/version/ s/"-SNAPSHOT"/"-mail"/' alerting/build.gradle
+./gradlew build
+scp alerting/build/distributions/opendistro_alerting-1.2.0.0-mail.zip centos@1.1.1.153:~
+
+#-------------------------------------------------------------------------------------------------------------------------------
+# Push some spam to logs
+sudo kubectl run elastalert-debug --restart=Never --image=centos -- bash -c 'for i in {1..1}; do echo "TEST cbsmq|#MQ_CR_ERR_RDBL MessagesReader: TEST A${i}"; done' && sleep 5 &&  sudo kubectl delete pod elastalert-debug
+
+#-------------------------------------------------------------------------------------------------------------------------------
+# Run pod with OpenDistro 
+sudo kubectl run -it od-debug --image=centos --restart=Never --env="discovery.type=single-node"
+
+#-------------------------------------------------------------------------------------------------------------------------------
+# Deploy Elastic OpenDistro into k8s
+
+cat <<EOF | sudo kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  name: od-elastic
+  namespace: default
+  labels:
+    app: od-elastic
+spec:
+  ports:
+    - name: http
+      port: 9200
+    - name: transport
+      port: 9300
+    - name: metrics
+  selector:
+    app: od-elastic
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: od-elastic
+  namespace: default
+  labels:
+    app: od-elastic
+spec:
+  selector:
+    matchLabels:
+      app: od-elastic
+  template:
+    metadata:
+      labels:
+        app: od-elastic
+    spec:
+      containers:
+      - name: od-elastic
+        image: amazon/opendistro-for-elasticsearch:1.2.0
+        env:
+        - name: discovery.type
+          value: single-node
+      restartPolicy: Always
+EOF
+
+#-------------------------------------------------------------------------------------------------------------------------------
+# Deploy Kibana OpenDistro into k8s
+
+cat <<EOF | sudo kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  name: od-kibana
+  namespace: default
+  labels:
+    app: od-kibana
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 5601
+  selector:
+    app: od-kibana
+  type: ClusterIP
+EOF
+---
+cat <<EOF | sudo kubectl apply -f -
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: od-kibana
+  labels:
+    app: kibana
+  namespace: default
+spec:
+  rules:
+  - host: od-kibana.1.1.1.154.nip.io
+    http:
+      paths:
+      - backend:
+          serviceName: od-kibana
+          servicePort: 443
+        path: /
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: od-kibana
+  namespace: default
+  labels:
+    app: od-kibana
+spec:
+  selector:
+    matchLabels:
+      app: od-kibana
+  template:
+    metadata:
+      labels:
+        app: od-kibana
+    spec:
+      containers:
+      - name: od-kibana
+        image: amazon/opendistro-for-elasticsearch-kibana:1.2.0
+        env:
+        - name: ELASTICSEARCH_URL
+          value: https://od-elastic:9200
+        - name: ELASTICSEARCH_HOSTS
+          value: https://od-elastic:9200
+      restartPolicy: Always
+EOF

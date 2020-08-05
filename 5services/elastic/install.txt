@@ -1,0 +1,96 @@
+#------------------------------------------------------------------------------
+# Elasticsearch bare installation
+
+rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
+
+cat << 'EOF' >> /etc/yum.repos.d/elasticsearch.repo
+[elasticsearch]
+name=Elasticsearch repository for 7.x packages
+baseurl=https://artifacts.elastic.co/packages/7.x/yum
+gpgcheck=1
+gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+enabled=1
+autorefresh=1
+type=rpm-md
+EOF
+
+yum install -y elasticsearch
+
+#------------------------------------------------------------------------------
+# Setup
+cat << 'EOF' >> /etc/elasticsearch/elasticsearch.yml
+network.host: [ 0 ]
+discovery.type: single-node
+#discovery.seed_hosts: [ dnsname1, dnsname2, dnsname3 ]
+#cluster.name: production
+EOF
+
+sed -i '/path.data/ s%.*%path.data: /mnt/disks/lv_es%g' /etc/elasticsearch/elasticsearch.yml
+
+#------------------------------------------------------------------------------
+# Tuning
+cat << 'EOF' >> /etc/elasticsearch/jvm.options
+-Xms8g
+-Xmx8g
+EOF
+sed -i '/swap/s/^\(.*\)$/#\1/g' /etc/fstab; swapoff -a
+PARAM="vm.max_map_count=262144" && echo ${PARAM} >> /etc/sysctl.d/elastic.conf && sysctl -w ${PARAM}
+
+#------------------------------------------------------------------------------
+# Start
+systemctl enable elasticsearch --now
+firewall-cmd --add-port=9200/tcp --permanent && firewall-cmd --reload
+
+#------------------------------------------------------------------------------
+# Security
+echo "xpack.security.enabled: true" >> /etc/elasticsearch/elasticsearch.yml
+systemctl restart elasticsearch
+/usr/share/elasticsearch/bin/elasticsearch-setup-passwords auto
+
+#------------------------------------------------------------------------------
+# Kibana cloud installation
+cat << 'EOF' >> v.yaml
+elasticsearchHosts: "http://1.1.1.91:9200"
+ingress:
+  enabled: true
+  hosts:
+    - kibana.1.1.1.154.nip.io
+extraEnvs:
+  - name: ELASTICSEARCH_USERNAME
+    value: elastic
+  - name: ELASTICSEARCH_PASSWORD
+    value: password
+EOF
+
+helm install --name elasticsearch elastic/kibana --version 7.5.0 --namespace logging --values v.yml
+
+#------------------------------------------------------------------------------
+# elastic-exporter cloud intallation
+helm install stable/elasticsearch-exporter --name elasticsearch-exporter --namespace logging \
+--set es.uri=http://elastic:password@1.1.1.91:9200
+
+#------------------------------------------------------------------------------
+# fluent-bit cloud installation
+cat << 'EOF' >> fluent-bit-values.yaml
+backend:
+  type: es
+  es:
+    host: 1.1.1.91
+    port: 9200
+    logstash_prefix: logstash
+    retry_limit: "False"
+    time_key: "@ts"
+    http_user: elastic
+    http_passwd: password
+tolerations:
+  - key: "node-role.kubernetes.io/master"
+    effect: "NoSchedule"
+input:
+  tail:
+    memBufLimit: 100MB
+    ignore_older: "30d"
+extraEntries:
+  output:
+    Generate_ID On
+EOF
+helm install --name fluent-bit stable/fluent-bit --version 2.8.4 --namespace logging --values fluent-bit-values.yaml

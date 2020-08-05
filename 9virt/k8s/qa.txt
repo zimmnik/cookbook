@@ -1,0 +1,15 @@
+https://kubernetes.io/docs/tasks/manage-kubernetes-objects/declarative-config/#merging-changes-to-primitive-fields
+
+https://kubernetes.io/docs/tasks/manage-kubernetes-objects/declarative-config/#how-to-change-ownership-of-a-field-between-the-configuration-file-and-direct-imperative-writers
+
+В каких случаях нужно пользоваться командой kubectl patch?
+
+
+
+helm install --name grafana stable/grafana --namespace logging --set \
+ingress.enabled=true,\
+ingress.hosts[0]=grafana.1.1.1.154.nip.io,\
+rbac.create=true,\
+persistence.enabled=true,\
+persistence.size=10Gi,\
+persistence.storageClassName=nfs-client

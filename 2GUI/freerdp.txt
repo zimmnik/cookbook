@@ -1,0 +1,17 @@
+# We need x11 session type for xfreerdp, otherwise keyboard grab won't work. Check it:
+loginctl
+loginctl show-session <SESSION_ID> -p Type
+
+sudo yum -y install freerdp
+
+cat << 'EOF' >> ~/.bashrc
+
+#--------------------------------------------------
+#FREERDP
+alias home="xfreerdp \
+/aero /decorations /themes /fonts /network:lan \
+/grab-keyboard /clipboard /kbd:Russian \
+/drive:REMOTE,$HOME/Desktop \
+/floatbar /monitors:0 /size:1920x1043 \
+/u:username /v:host:port"
+EOF

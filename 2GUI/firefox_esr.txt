@@ -1,0 +1,51 @@
+# JAVA
+chmod +x jdk-6u45-linux-x64-rpm.bin
+sudo ./jdk-6u45-linux-x64-rpm.bin
+java -version
+
+# WebStart
+sudo alternatives --install /usr/bin/javaws javaws /usr/java/jdk1.6.0_45/jre/bin/javaws 20000
+sudo yum -y install libnsl
+javaws -version
+
+# Firefox ESR
+mkdir ~/.local/opt/
+curl -O https://ftp.mozilla.org/pub/firefox/releases/52.9.0esr/linux-x86_64/en-US/firefox-52.9.0esr.tar.bz2
+#yum -y install glibc.i686 libstdc++-4.8.5-39.el7.i686 libgcc-4.8.5-39.el7.i686 gtk3-3.22.30-3.el7.i686 dbus-glib-0.100-7.el7.i686 libXt-1.1.5-3.el7.i686
+sudo yum -y install bzip2
+tar -xjvf firefox-52.9.0esr.tar.bz2 -C ~/.local/opt/
+
+# Profile "esr52"
+~/.local/opt/firefox/firefox -p
+cd ~/.mozilla/firefox/
+cat profiles.ini
+cd someprofile.esr52
+cat <<EOF > prefs.js
+user_pref("app.update.auto", false);
+user_pref("app.update.enabled", false);
+EOF
+mkdir plugins && cd plugins/
+ln -s /usr/java/jdk1.6.0_45/jre/lib/amd64/libnpjp2.so libjavaplugin.so
+~/.local/bin/firefox/firefox -p esr52 -no-remote ilo.home.local
+
+# Link
+cat << 'EOF' > ~/.local/share/applications/esr.desktop 
+[Desktop Entry]
+Name=ESR52
+Exec=/home/username/.local/bin/firefox/firefox -p esr52 -no-remote
+Icon=firefox
+Terminal=false
+Type=Application
+StartupNotify=true
+Categories=Network;WebBrowser;
+EOF
+
+# FLASH PLAYER
+sudo yum -y install nss-3.44.0-4.el7.i686 gtk2-2.24.31-1.el7.i686
+mkdir flash && tar -xzvf flashplayer11_2r202_644_linux.x86_64.tar.gz -C flash
+cp flash/libflashplayer.so ~/.mozilla/firefox/40vyy206.esr52/plugins/
+
+sudo yum install adobe-release-x86_64-1.0-1.noarch.rpm
+sudo yum install flash-plugin
+ln -s /usr/lib64/flash-plugin/libflashplayer.so
+

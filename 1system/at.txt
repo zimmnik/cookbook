@@ -1,0 +1,17 @@
+sudo yum -y install at smartmontools sg3_utils postfix
+sudo systemctl enable atd --now
+
+sudo sh -c 'echo "$USER: name@mail.box" >> /etc/aliases'
+sudo newaliases
+
+mkdir ~/.local/bin
+cat <<EOF >> ~/.local/bin/bad_check.sh
+#!/bin/bash
+IFS='=' read -r -a parameter <<< "$1"
+scsi_start -w ${parameter[0]}
+smartctl -a ${parameter[0]}
+badblocks -vw ${parameter[0]}
+EOF
+chmod +x ~/.local/bin/bad_check.sh
+
+echo "$HOME/.local/bin/bad_check.sh /dev/sdXXX" | sudo at -m 23:10

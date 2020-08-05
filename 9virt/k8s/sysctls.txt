@@ -1,0 +1,30 @@
+kubectl proxy --port=8001 &
+curl -sSL "http://localhost:8001/api/v1/nodes/node1/proxy/configz" | jq '.kubeletconfig|.kind="KubeletConfiguration"|.apiVersion="kubelet.config.k8s.io/v1beta1"' | less
+
+#apiVersion: kubelet.config.k8s.io/v1beta1
+#kind: KubeletConfiguration
+
+sudo vim /etc/kubernetes/kubelet.env
+#--allowed-unsafe-sysctls='net.core.somaxconn' \
+#--config=/etc/kubernetes/kbl.yaml \
+
+cat <<EOF | sudo kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sysctl-test-pod
+spec:
+  nodeName: "node2"
+  securityContext:
+    sysctls:
+    - name: net.core.somaxconn
+      value: "1024"
+  containers:
+  - name: sysctl-test-container
+    command: ["/bin/sh", "-c", "trap : TERM INT; (while true; do sleep 1000; done) & wait"]
+    image: centos	
+EOF
+
+sudo kubectl exec -it sysctl-test-pod -- sysctl net.core.somaxconn
+
+
