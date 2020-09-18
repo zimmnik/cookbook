@@ -1,0 +1,2 @@
+grubby --update-kernel=ALL --remove-args="rhgb quiet"
+echo "kernel.printk = 4 4 1 7" >> /etc/sysctl.d/95-printk.conf

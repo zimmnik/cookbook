@@ -1,0 +1,9 @@
+#https://access.redhat.com/downloads/content/479/ver=/rhel---8/8.2/x86_64/product-software
+#https://access.redhat.com/downloads/content/package-browser
+
+subscription-manager register --username YYY --password Rh903890
+subscription-manager service-level --set="Self-Support"
+subscription-manager usage --set="Development"
+subscription-manager role --set="Red Hat Enterprise Linux Server"
+subscription-manager attach
+yum makecache

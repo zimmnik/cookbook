@@ -1,0 +1,9 @@
+mkdir /etc/systemd/system/getty@tt1.service.d
+
+cat << 'EOF' >> /etc/systemd/system/getty@tt1.service.d/override.conf
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin root --noclear %I $TERM
+EOF
+
+systemctl daemon reload
