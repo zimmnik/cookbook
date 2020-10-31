@@ -1,27 +1,15 @@
-# locale
-sudo yum -y install glibc-locale-source && \
-sudo localedef -i ru_RU -f UTF-8 ru_RU.UTF-8
+# maximum russian localization
+localectl set-locale LANG="ru_RU.UTF-8"
+sed -i 's/$/:ru_RU:ru_RU.UTF-8/' /etc/rpm/macros.image-language-conf
+yum -y reinstall dnf glibc-common
+yum -y install langpacks-ru
+
+# gnome locale
 gsettings set org.gnome.system.locale region ru_RU.UTF-8 && \
 gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'us'), ('xkb', 'ru')]" && \
 gsettings set org.gnome.desktop.wm.keybindings switch-input-source "['<Alt>Shift_L']"
 gnome-session-quit --logout --force --no-prompt
 
-#t linux vconsole
-# ctrl+shift - swicth layout
+# linux vconsole
+# ctrl+shift - switch layout
 sed -i -e 's/\(^FONT=\).*/\1"cyr-sun16"/' -e 's/\(^KEYMAP=\).*/\1"ru"/' /etc/vconsole.conf
-
-localectl set-locale \
-LANG=en_US.UTF-8 \
-LC_CTYPE="en_US.UTF-8" \
-LC_NUMERIC=ru_RU.UTF-8 \
-LC_TIME=ru_RU.UTF-8 \
-LC_COLLATE="en_US.UTF-8" \
-LC_MONETARY=ru_RU.UTF-8 \
-LC_MESSAGES="en_US.UTF-8" \
-LC_PAPER=ru_RU.UTF-8 \
-LC_NAME="en_US.UTF-8" \
-LC_ADDRESS="en_US.UTF-8" \
-LC_TELEPHONE="en_US.UTF-8" \
-LC_MEASUREMENT=ru_RU.UTF-8 \
-LC_IDENTIFICATION="en_US.UTF-8" \
-
