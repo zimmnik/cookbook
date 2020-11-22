@@ -1,30 +1,26 @@
-DEFAULT \
--C 197+ -U 198+ -S on -o on -l selftest -l error -f \
--m root -M exec /usr/libexec/smartmontools/smartdnotify \
--s (S/../../../01|L/../../6/21) \
--I 194 -W 5,45,50 \
--n standby,10,q \
--d removable
-DEVICESCAN
-/dev/sda -C 0 -U 0
+#-o on \         #Enables SMART Automatic Offline Testing
+#-W 0,0,50 \     #Report if max temperature is detected
+#-l selftest \   #report if the number of failed tests reported in the SMART Self-Test Log has increased since the last check
+#-l xerror \     #report if the number of ATA errors reported in the Extended Comprehensive SMART error log has increased since the last check
+#-l error \      #report if the number of ATA errors reported in the Summary SMART error log has increased since the last check.
 
-or
+DEFAULT \       #apply settins for any device below
+-d sat \        #device type
+-n standby,q \  #check the device unless it is in SLEEP or STANDBY mode and suppress an informal log message about skipping
+-S on \         #Enables SMART autosave of device vendor-specific Attributes
+-H \            #Check the health status of the disk with the SMART RETURN STATUS command
+-l selfteststs \#report if the Self-Test execution status has changed since the last check.
+-f \            #Check  for 'failure' of any Usage Attributes.
+-p \            #Report anytime that a Prefail Attribute has changed its value since the last check
+-u \            #Report anytime that a Usage Attribute has changed its value since the last check
+-C 0 \		#Turn off report if the current number of pending sectors is non-zero
+-m root \       #Send a warning email to the email address
+-M exec /usr/libexec/smartmontools/smartdnotify		#run the executable PATH instead of the default mail command
 
-DEVICESCAN \
--H -S on -o on -l selftest -l error -f \
--m root -M exec /usr/libexec/smartmontools/smartdnotify \
--s (S/../../../01|L/../../6/21) \
--I 194 -W 5,45,50 -R 5! -C 0 \
--n standby,10,q
+/dev/disk/by-id/ata-PLEXTOR_PX-256M5M_P02310105851 \
+-s (C/../../../01|S/../../../02|L/../../6/21) \		#enable periodic tests
+-l selftest \   #report if the number of failed tests reported in the SMART Self-Test Log has increased since the last check
+-l error        #report if the number of ATA errors reported in the Summary SMART error log has increased since the last check.
 
-or
-
-DEFAULT \
--H -S on -o on -l selftest -l error -f \
--m root -M exec /usr/libexec/smartmontools/smartdnotify \
--s (S/../../../01|L/../../6/21) \
--I 194 -W 5,45,50 -R 5! -C 0 \
--n standby,10,q
-/dev/disk/by-id/ata-KINGSTON_SUV400S37240G_50026B7676009089 -s (S/../../../01|L/../../6/19)
-/dev/disk/by-id/ata-KINGSTON_SV300S37A240G_50026B72590EFB9E -s (S/../../../02|L/../../6/21)
-/dev/disk/by-id/ata-ST33000650NS_Z290F06Q -s (S/../../../03|L/../../6/23)
+/dev/disk/by-id/ata-INTEL_SSDSC2CT120A3_CVMP23910376120BGN \
+-U 0		#Turn off report if the number of offline uncorrectable sectors is non-zero
