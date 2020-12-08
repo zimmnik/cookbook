@@ -49,6 +49,7 @@ git push origin +master --force
 #------------------------------------------------------------------------------------
 # Undo many commits +remote (Only unprotected branches)
 # https://stackoverflow.com/questions/1463340/revert-multiple-git-commits/1463390#comment1312779_1463390
+git clean -fd
 git reset --hard A
 git reset --soft @{1}
 git commit
