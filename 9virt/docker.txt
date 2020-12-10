@@ -27,3 +27,6 @@ docker run --name nginx -d -p 8000:80 -v /c/Users/zorg/Desktop/provisioner/kicks
 curl http://192.168.99.100:8000/custom.cfg
 
 docker container ls --format "{{.ID}} \t{{.Labels}}"
+
+docker ps --size
+docker system df
