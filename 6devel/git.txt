@@ -34,11 +34,10 @@ git branch -a
 
 #------------------------------------------------------------------------------------
 # Add tag and push
-echo "PROJECTNAME v0.2.1-build3" > README.md 
-git add -A
-git ci -m "Version updated to v0.2.1-build3"
 git tag v0.2.1-build3
-git push origin : v0.2.1-build3
+git push origin v0.2.1-build3
+git show-ref --tags
+git log --tags --no-walk --date=iso-local --pretty='%C(auto)%h %cd%d %s'
 
 #------------------------------------------------------------------------------------
 # Undo local commit http://www-cs-students.stanford.edu/~blynn/gitmagic/ch05.html#_8230_and_then_some
