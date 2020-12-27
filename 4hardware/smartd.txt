@@ -1,3 +1,5 @@
+sudo vim /etc/smartmontools/smartd.conf
+
 #-o on \         #Enables SMART Automatic Offline Testing
 #-W 0,0,50 \     #Report if max temperature is detected
 #-l selftest \   #report if the number of failed tests reported in the SMART Self-Test Log has increased since the last check
@@ -24,3 +26,5 @@ DEFAULT \       #apply settins for any device below
 
 /dev/disk/by-id/ata-INTEL_SSDSC2CT120A3_CVMP23910376120BGN \
 -U 0		#Turn off report if the number of offline uncorrectable sectors is non-zero
+
+sudo systemctl restart smartd

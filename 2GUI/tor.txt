@@ -1,0 +1,7 @@
+cd ~/.local/
+mkdir opt
+cd opt/
+sudo tar -xvf ~/Downloads/tor-browser-linux64-10.0.4_en-US.tar.xz 
+tar -xvf ~/Downloads/tor-browser-linux64-10.0.4_en-US.tar.xz 
+cd tor-browser_en-US/
+./start-tor-browser.desktop --register-app

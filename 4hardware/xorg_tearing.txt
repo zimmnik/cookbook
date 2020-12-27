@@ -1,18 +1,23 @@
+less ~/.local/share/xorg/Xorg.1.log
+
 #GENERATE CONFIG
 sudo X :2 -configure
 
-#NVIDIA
-Section "Device"
-   Identifier  "Intel Graphics"
-   Driver      "intel"
-   Option      "TearFree"    "true"
-EndSection
-
-01-tearing.conf
-#INTEL
+sudo vim /etc/X11/xorg.conf.d/20-nvidia-tearing.conf 
 Section "Device"
     Identifier     "Device0"
     Driver         "nvidia"
     VendorName     "NVIDIA Corporation"
     Option 	   "TripleBuffer" "True"
 EndSection
+
+# DRI 2 for Sandy bridge videocards only
+sudo vim /etc/X11/xorg.conf.d/20-intel-tearing.conf 
+Section "Device"
+  Identifier "Intel Graphics"
+  Driver "intel"
+  Option "DRI" "2"
+  Option "TearFree" "true"
+EndSection
+
+reboot

@@ -1,0 +1,10 @@
+sudo yum install usbutils lshw
+lsusb
+cat << EOF | sudo tee /etc/udev/rules.d/98-broadcom-bluetooth.rules
+SUBSYSTEM=="usb", ACTION=="add", ATTR{removable}=="fixed", ATTR{idVendor}=="0a5c", ATTR{idProduct}=="217f", ATTR{authorized}="0"
+EOF
+udevadm info -a -p /sys/bus/usb/devices/1-1.4 | less
+sudo udevadm control --reload-rules && sudo udevadm trigger
+sudo lshw -c communication
+rfkill list
+sudo lshw -c communication
