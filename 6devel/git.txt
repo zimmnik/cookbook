@@ -31,6 +31,10 @@ git remote remove origin && git remote add origin $URL && git push -u --force or
 # Update and view branch list
 git remote update origin --prune
 git branch -a
+# Create branch
+git checktout -b new_branch_name
+# Pull all local branchesh
+git push --all -u
 
 #------------------------------------------------------------------------------------
 # Add tag and push
