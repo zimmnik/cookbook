@@ -29,7 +29,7 @@ cat <<EOF >> upsd.users
 EOF
 
 sed -i "/^MODE=/ s/=.*/=standalone/" nut.conf
-systemctl restart nut-server
+systemctl --now enable nut-server
 
 ###########################################################################################################
 # NUT MONITOR SETUP
