@@ -40,7 +40,7 @@ EOF
 chmod +x /usr/local/bin/nut_notify.sh
 
 sed -i '/^SHUTDOWNCMD/ s/".*/"shutdown now"/' upsmon.conf
-cat <<'EOF' >> upsmon.conf
+cat <<EOF >> upsmon.conf
 MONITOR APC@localhost 1 upsmon ${PASS} master
 NOTIFYCMD "/usr/local/bin/nut_notify.sh"
 NOTIFYFLAG ONLINE       EXEC+SYSLOG
