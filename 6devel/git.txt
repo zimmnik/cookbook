@@ -43,6 +43,10 @@ git push origin v0.2.1-build3
 git show-ref --tags
 git log --tags --no-walk --date=iso-local --pretty='%C(auto)%h %cd%d %s'
 
+# Remove tag and push
+git tag -d v0.1.0
+git push origin :refs/tags/v0.1.0
+
 #------------------------------------------------------------------------------------
 # Undo local commit http://www-cs-students.stanford.edu/~blynn/gitmagic/ch05.html#_8230_and_then_some
 git rebase -i HEAD~2
