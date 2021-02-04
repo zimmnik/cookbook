@@ -30,3 +30,39 @@ docker container ls --format "{{.ID}} \t{{.Labels}}"
 
 docker ps --size
 docker system df
+
+#####################################################################################################################
+# Build with SSH agent passthrough
+cat <<EOF > /etc/docker/daemon.json
+{ "features": { "buildkit": true } }
+EOF
+sudo systemctl docker restart
+
+cat <<EOF > Dockerfile
+# syntax = docker/dockerfile:1.0.0-experimental
+# https://docs.docker.com/develop/develop-images/build_enhancements/#using-ssh-to-access-private-data-in-builds
+
+FROM  openjdk:11-jdk-buster
+
+MAINTAINER Semyon Vasilkov <github@zimmnik.ru>
+LABEL Description="Build with SSH agent passthrough" Version="0.01"
+
+# Set local time
+ENV TZ=Europe/Moscow
+
+# Install debug utilites 
+RUN apt update && apt -y install curl nmap strace tcpdump less vim jq mc && \
+     rm -rf /var/lib/apt/lists/*
+
+# Make known hosts
+RUN  mkdir -m 700 /root/.ssh && \
+ touch -m 600 /root/.ssh/known_hosts && \
+ ssh-keyscan github.com > /root/.ssh/known_hosts
+
+# Clone sources 
+RUN     --mount=type=ssh git clone git@github.com:zimmnik/cookbook.git
+
+WORKDIR /cookbook
+EOF
+
+#####################################################################################################################
