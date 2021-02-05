@@ -35,7 +35,7 @@ systemctl --now enable nut-server
 # NUT MONITOR SETUP
 cat <<'EOF' >> /usr/local/bin/nut_notify.sh
 #!/bin/bash
-mail -s "$(date +%T) $(hostname) $*" root <<< "$*"
+mail -s "$(date +%T) ${hostname} $*" root <<< "$*"
 EOF
 chmod +x /usr/local/bin/nut_notify.sh
 
