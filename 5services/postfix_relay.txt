@@ -1,0 +1,7 @@
+yum -y install postfix
+sed -i '/^root:/s/^/#/g' /etc/aliases
+echo "root:           mail@box.com" >> /etc/aliases
+newaliases
+echo "myhostname=${HOSTNAME}" >> /etc/postfix/main.cf
+systemctl enable postfix --now
+
