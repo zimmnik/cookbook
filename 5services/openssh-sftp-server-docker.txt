@@ -58,6 +58,6 @@ docker logs -ft sftp-backup
 
 #---------------------------------------------------
 sftp -i ~/.ssh/id_rsa_zorg sftp://root@localhost:2000
-sftp -i ~/.ssh/id_rsa_zorg -P 2000 root@localhost
+sftp -i ~/.ssh/id_rsa_zorg -P 2000 root@localhost <<< "ls -1 /mnt"
 sudo yum install fuse-sshfs && \
 sshfs root@localhost:/ ~/temp -p 2000 -o IdentityFile=~/.ssh/id_rsa
