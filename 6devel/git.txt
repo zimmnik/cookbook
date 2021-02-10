@@ -62,3 +62,11 @@ git reset --soft @{1}
 git commit
 git push origin HEAD --force
 
+#------------------------------------------------------------------------------------
+# Copy file from src_branch to dest_branch
+git checkout dest_branch
+git diff --name-only src_branch
+git checkout src_branch src_file.txt
+git add -A && git status
+git commit
+
