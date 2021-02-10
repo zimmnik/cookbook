@@ -31,10 +31,15 @@ git remote remove origin && git remote add origin $URL && git push -u --force or
 # Update and view branch list
 git remote update origin --prune
 git branch -a
+
 # Create branch
 git checktout -b new_branch_name
 # Pull all local branchesh
 git push --all -u
+
+# Remove local and remote branch
+git branch -d branchname
+git push origin --delete branchname
 
 #------------------------------------------------------------------------------------
 # Add tag and push
@@ -69,4 +74,5 @@ git diff --name-only src_branch
 git checkout src_branch src_file.txt
 git add -A && git status
 git commit
+
 
