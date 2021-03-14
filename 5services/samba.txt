@@ -28,6 +28,11 @@ pdbedit -L
 
         logging = systemd@1
 
+        # Windwos XP compatibility
+        ntlm auth = yes
+        min protocol = NT1
+        lanman auth = yes
+
         load printers = no
         show add printer wizard = no
         printcap name = /dev/null
