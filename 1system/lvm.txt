@@ -26,3 +26,8 @@ lvcreate -s -L 2G -n snap /dev/vg_machine/root
 lvremove /dev/vg_machine/snap
 lvconvert –merge /dev/vg_machine/snap
 lvs -a
+
+# enlarge volumes
+pvresize /dev/vda3
+lvresize --size +20G --resizefs /dev/xxxx/root
+lvresize --extents +100%FREE --resizefs /dev/xxxx/root
