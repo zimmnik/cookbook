@@ -1,0 +1,10 @@
+# Fedora34
+
+yum group list --hidden
+yum group info vagrant
+
+sudo yum -y install @virtualization
+sudo usermod -aG libvirt zorg
+sudo systemctl start libvirtd
+
+sudo yum install @vagrant
