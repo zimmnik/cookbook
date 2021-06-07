@@ -1,0 +1,2 @@
+yum -y install splix cups
+systemctl enable cups --now
