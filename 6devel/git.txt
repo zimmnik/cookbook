@@ -1,6 +1,6 @@
 #------------------------------------------------------------------------------------
 # Git setup
-git config --global user.email "job@zimmnik.ru" && \
+git config --global user.email "github@zimmnik.ru" && \
 git config --global user.name "Semyon Vasilkov" && \
 git config --global credential.helper store && \
 git config --global push.default simple && \
