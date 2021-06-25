@@ -1,13 +1,14 @@
 #------------------------------------------------------------------------------------
 # Git setup
-git config --global user.email "name@mail.box" && \
+git config --global user.email "job@zimmnik.ru" && \
 git config --global user.name "FirstName LastName" && \
 git config --global credential.helper store && \
 git config --global push.default simple && \
 git config --global alias.ci commit && \
 git config --global alias.hist "log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short" && \
 git config --global alias.b "branch -a" && \
-git config --global alias.bu "remote update origin --prune"
+git config --global alias.bu "remote update origin --prune" \
+git config --global pull.ff only 
 
 #------------------------------------------------------------------------------------
 # Create repo and push to gitlab
