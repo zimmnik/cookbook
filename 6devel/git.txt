@@ -1,7 +1,7 @@
 #------------------------------------------------------------------------------------
 # Git setup
 git config --global user.email "job@zimmnik.ru" && \
-git config --global user.name "FirstName LastName" && \
+git config --global user.name "Semyon Vasilkov" && \
 git config --global credential.helper store && \
 git config --global push.default simple && \
 git config --global alias.ci commit && \
