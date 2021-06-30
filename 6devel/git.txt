@@ -70,6 +70,7 @@ git reset --soft @{1}
 git commit
 git push origin HEAD --force
 
+COMMIT=manyCode ; git clean -fd && git reset --hard "$COMMIT" && git reset --soft @{1} && git commit -m "Reverted to ${COMMIT}"&& git push origin HEAD --force
 #------------------------------------------------------------------------------------
 # Copy file from src_branch to dest_branch
 git checkout dest_branch
