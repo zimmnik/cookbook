@@ -1,12 +1,14 @@
+
+firewall-cmd --state
+firewall-cmd --get-active-zones
+firewall-cmd --info-zone=public
+
 firewall-cmd --get-services | grep elast
 firewall-cmd --info-service=elasticsearch
 
 firewall-cmd --set-log-denied=all
 less /var/log/firewalld 
 firewall-cmd --set-log-denied=off
-
-firewall-cmd --get-all
-firewall-cmd --get --active-zones
 
 firewall-cmd --reload
 firewall-cmd --permanent --new-zone=dmz-media
@@ -21,9 +23,7 @@ firewall-cmd --permanent --set-default-zone=public
 firewall-cmd --get-default-zone
 
 firewall-cmd --get-active-zones
-firewall-cmd --permanent --info-zone=public
+firewall-cmd --info-zone=public
 firewall-cmd --permanent --add-masquerade
 firewall-cmd --permanent --add-forward-port=port=6443:proto=tcp:toaddr=10.100.1.10
 firewall-cmd --reload
-firewall-cmd--permanent --info-zone=public
-
