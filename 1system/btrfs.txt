@@ -1,0 +1,35 @@
+lsblk -o +label,fstype,uuid
+btrfs fi show
+
+mkfs.btrfs -L thinkpad -m dup -d single /dev/sda2
+
+mount -o rw,relatime,compress=zstd:1,ssd,space_cache /dev/sda2 /mnt/restore
+btrfs subvolume list /mnt/restore 
+btrfs subvolume snapshot /mnt/restore/latest_weekend/ /mnt/restore/root
+btrfs subvolume delete /mnt/restore/latest_weekend/
+btrfs subvolume list /mnt/restore 
+
+mount -o rw,relatime,compress=zstd:1,ssd,space_cache,subvol=root /dev/sda2 /mnt/restore
+
+# make root ro snapshot
+btrfs su snapshot -r / /.sv/bk
+btrfs p get /.sv/bk
+# restore root ro snapshot 
+btrfs su list -t /
+btrfs p set /.sv/bk ro false
+mount -o rw,subvol=root/.sv/bk /dev/sda2 /mnt
+sed -i "s%subvol=root%subvol=root/.sv/bk%" /mnt/etc/fstab 
+#reboot with grub option rootflags=subvol=root/.sb/bk
+btrfs su show /
+btrfs su list -t /
+mount -o subvolid=0 /dev/sda2 /mnt && cd /mnt
+mv root/.sv/bk/ newroot
+mv root oldroot
+mv newroot root
+btrfs su delete /mnt/oldroot
+#reboot
+
+#btrfs send -v /.sv/snapshot | zstd -z -T0 - | gpg -c --pinentry-mode loopback --passphrase xxx --compress-algo none -o root.zstd.gpg
+#gpg -d --pinentry-mode loopback --passphrase xxx -o - root.zstd.gpg | zstd -t -T0 
+#gpg -d --pinentry-mode loopback --passphrase xxx -o - root.zstd.gpg | zstd -d -T0 | btrfs receive -v /mnt
+

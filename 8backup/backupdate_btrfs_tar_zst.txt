@@ -1,0 +1,287 @@
+#!/bin/bash
+#VERSION=290705
+
+#ANACRONTAB
+#START_HOURS_RANGE=0-7
+@daily 25 backup bash -c "/usr/local/bin/backupdate.sh 1> >(tee >(systemd-cat -t backup-stdout)) 2> >(tee >(systemd-cat -t backup-stderr) >&2)"
+
+#---------------------------------------------------------------------------------------------
+system_setup () {
+  echo -e "\n$(date -Iminutes) setup_system"
+  
+  yum -y install fuse-sshfs btrfs-progs zstd time
+  mkdir -v /mnt/backup || true
+  mkdir -v /.sv || true
+
+  btrfs subvolume snapshot -r / /.sv/previous_nightly || true
+  btrfs subvolume snapshot -r / /.sv/latest_nightly || true
+  btrfs subvolume snapshot -r / /.sv/previous_weekend || true
+  btrfs subvolume snapshot -r / /.sv/latest_weekend || true
+
+  unlocking
+}
+
+#---------------------------------------------------------------------------------------------
+system_check () {
+  echo -e "\n$(date -Iminutes) system_check"
+  
+  echo "Check utilites ..."
+  command -v sshfs
+  command -v tar
+  command -v zstd
+  command -v btrfs
+  command -v /usr/bin/time
+
+  echo -e "\nCheck folders"
+  test -d /tmp/; echo "test" > /tmp/testfile; rm /tmp/testfile
+  test -d /mnt/backup/; if mountpoint /mnt/backup; then exit 1; fi
+
+  echo -e "\nCheck local partitions ..."
+  test -b /dev/disk/by-uuid/a310a4ab-4282-4dda-ad4f-148645f67140; echo "fedora boot"
+  test -b /dev/disk/by-uuid/016b7f09-b989-4596-9a8a-dc24f48f3ace; echo "fedora root"
+  test -b /dev/disk/by-uuid/001688EA1688E1D0; echo "windows disk c"
+
+  echo -e "\nCheck local stor free space ..."
+  STOR=local TYPE=system mount_stor
+    #https://stackoverflow.com/questions/45409822/bash-local-and-readonly-variable
+    local -r LOCAL_STOR_MIN_FREE_GB=15; echo "LOCAL_STOR_MIN_FREE_GB=${LOCAL_STOR_MIN_FREE_GB}"
+    local -r LOCAL_STOR_FREE_GB=$(($(stat -f --format="%a*%S" .)/1024**3)); echo "LOCAL_STOR_FREE_GB=${LOCAL_STOR_FREE_GB}"
+  umount_stor
+  if [[ $LOCAL_STOR_FREE_GB -lt LOCAL_STOR_MIN_FREE_GB ]]; then exit 1; fi
+  
+  echo -e "\nCheck remote stor free space ..."
+  STOR=remote TYPE=system mount_stor
+    echo "test" > testfile; rm testfile
+    local -r REMOTE_STOR_MIN_FREE_GB=100; echo "REMOTE_STOR_MIN_FREE_GB=${REMOTE_STOR_MIN_FREE_GB}"
+    local -r REMOTE_STOR_FREE_GB=$(($(stat -f --format="%a*%S" .)/1024**3)); echo "REMOTE_STOR_FREE_GB=${REMOTE_STOR_FREE_GB}"
+  umount_stor
+  if [[ REMOTE_STOR_FREE_GB -lt REMOTE_STOR_MIN_FREE_GB ]]; then exit 1; fi
+
+  echo -e "\nCheck root free space ..."
+  local -r ROOT_MIN_FREE_GB=5; echo "ROOT_MIN_FREE_GB=${ROOT_MIN_FREE_GB}"
+  local -r ROOT_FREE_GB=$(($(stat -f --format="%a*%S" .)/1024**3)); echo "ROOT_FREE_GB=${ROOT_FREE_GB}"
+  if [[ ROOT_FREE_GB -lt ROOT_MIN_FREE_GB ]]; then exit 1; fi
+}
+
+#---------------------------------------------------------------------------------------------
+locking () {
+  echo -e "\n$(date -Iminutes) locking"
+  if [[ -f /tmp/backupdate.lock ]]; then
+    echo "backup already running or crashed"
+    return 1
+  else
+    touch /tmp/backupdate.lock
+    echo "created /tmp/backupdate.lock"
+  fi
+}
+unlocking () {
+  echo -e "\n$(date -Iminutes) unlocking"
+  rm -v /tmp/backupdate.lock || true
+  sync
+}
+
+#---------------------------------------------------------------------------------------------
+mount_stor () {
+  case ${STOR} in
+  local)
+    mount /dev/disk/by-uuid/001688EA1688E1D0 /mnt/backup
+    echo "/dev/disk/by-uuid/001688EA1688E1D0 mounted on /mnt/backup"
+    ;;
+  remote)
+    sshfs fs:/stor/backup/ /mnt/backup
+    echo "fs:/stor/backup/ mounted on /mnt/backup"
+    ;;
+  esac
+
+  case ${TYPE} in
+  system)
+    cd /mnt/backup/thinkpad_fedora/system/
+    ;;
+  data)
+    cd /mnt/backup/thinkpad_fedora/data/
+    ;;
+  esac
+}
+umount_stor () {
+  cd /; sync && umount /mnt/backup
+}
+
+#---------------------------------------------------------------------------------------------
+report () {
+  echo -e "\n$(date -Iminutes) report"
+  mount_stor
+    tree -haD .
+  umount_stor
+}
+
+#---------------------------------------------------------------------------------------------
+system_backup () {
+  echo -e "\n$(date -Iminutes) STOR=${STOR} TYPE=${TYPE} system_backup"
+  btrfs subvolume delete /.sv/previous_weekend
+  btrfs subvolume snapshot -r /.sv/latest_weekend /.sv/previous_weekend
+  btrfs subvolume delete /.sv/latest_weekend
+  btrfs subvolume snapshot -r / /.sv/latest_weekend
+  mount_stor
+    cd latest/ && pwd
+    timestdout tar --selinux -cf - -C / boot | zstdmt -z --quiet -o "boot-${DATE}.tar.zst"
+    timestdout btrfs send -v /.sv/latest_weekend | zstdmt -z --quiet -o "root-${DATE}.btrfs.zst"
+  umount_stor
+}
+
+#---------------------------------------------------------------------------------------------
+data_backup () {
+  echo -e "\n$(date -Iminutes) STOR=${STOR} TYPE=${TYPE} data_backup"
+  btrfs subvolume delete /.sv/previous_nightly
+  btrfs subvolume snapshot -r /.sv/latest_nightly /.sv/previous_nightly
+  btrfs subvolume delete /.sv/latest_nightly
+  btrfs subvolume snapshot -r / /.sv/latest_nightly
+  mount_stor
+    cd latest/ && pwd
+    timestdout tar --selinux -cf - -C / \
+    .sv/latest_nightly/home/zorg/Desktop/ \
+    .sv/latest_nightly/home/zorg/.ssh/ \
+    .sv/latest_nightly/home/zorg/.config/keepassxc/ \
+    .sv/latest_nightly/home/zorg/.local/opt/tor-browser_en-US/ \
+    .sv/latest_nightly/home/zorg/.config/chromium/Default/ \
+    .sv/latest_nightly/home/zorg/.mozilla/ \
+    | zstdmt -z --quiet -o "backup-${DATE}.tar.zst"
+  umount_stor
+}
+
+#---------------------------------------------------------------------------------------------
+backup () {
+  echo -e "\n$(date -Iminutes) STOR=${STOR} TYPE=${TYPE} backup"
+  report
+  DATE=$(date '+%Y-%m-%d')
+  case ${TYPE} in
+  system)
+    system_backup 
+    ;;
+  data)
+    data_backup
+    ;;
+  esac
+  report
+}
+
+#---------------------------------------------------------------------------------------------
+check () {
+  #https://stackoverflow.com/questions/965053/extract-filename-and-extension-in-bash
+  #https://stackoverflow.com/questions/9612090/how-to-loop-through-file-names-returned-by-find
+  echo -e "\n$(date -Iminutes) STOR=${STOR} TYPE=${TYPE} check"
+  mount_stor
+    cd latest/ && pwd
+    if ! compgen -G "${PWD}/*.zst" > /dev/null; then
+      echo "Backups are absent! Exiting..."
+      exit 1
+    fi
+    local FILE
+    for FILE in *.zst; do
+      case ${STOR} in
+      local)
+        timestdout zstdmt -t --quiet "${FILE}"
+        ;;
+      remote)
+        # shellcheck disable=SC2029
+        ssh fs "cd /stor/backup/thinkpad_fedora/${TYPE}/latest/ && timestdout zstdmt -t --quiet ${FILE}"
+        ;;
+      esac
+    done
+  umount_stor
+}
+
+#---------------------------------------------------------------------------------------------
+rotate () {
+  echo -e "\n$(date -Iminutes) STOR=${STOR} TYPE=${TYPE} rotate_backups"
+  report
+  check
+  mount_stor
+    pwd
+    rm -v -rf previous/
+    mv -v latest/ previous/
+    mkdir -v latest/
+  umount_stor
+  report
+}
+
+#---------------------------------------------------------------------------------------------
+system_update () {
+  echo -e "\n$(date -Iminutes) system_update"
+  
+  #local -r OPT=(--bugfix --enhancement --security)
+  local -r OPT=(--bugfix --security)
+
+  set +o errexit
+  yum "${OPT[@]}" --refresh check-update
+  local -r RESULT="$?"
+  set -o errexit
+  
+  case "$RESULT" in
+  0)
+    echo "New packages is absent"
+    ;;
+  100)
+    echo "Installing new packages..."
+  
+    exec 5>&1
+    local -r LOG=$(yum --assumeyes "${OPT[@]}" upgrade |& tee /dev/fd/5)
+    echo -e "Subject:Packages upgrade \n\n$LOG\n" | sendmail root
+
+    echo "Rebooting ..."
+    sync && sleep 60 && reboot
+    ;;
+  *)
+    exec 5>&1
+    echo "yum returned exit code ${RESULT}" | tee /dev/fd/5 | sendmail root
+    ;;
+  esac
+}
+
+timestdout() {
+  /usr/bin/time -p -o >(tee /dev/null) "$@"
+}
+
+#---------------------------------------------------------------------------------------------
+main () {
+  set -o pipefail
+  set -o errexit
+  set -o nounset
+  
+  system_check
+  locking
+  case $(date +%u) in
+  1)
+    #----------------
+    STOR=local
+    TYPE=data
+    rotate
+    backup
+    TYPE=system
+    rotate
+    backup
+  
+    #----------------
+    STOR=remote
+    TYPE=data
+    rotate
+    backup
+    TYPE=system
+    rotate
+    backup
+  
+    #----------------
+    system_update
+    ;;
+  *)
+    #----------------
+    TYPE=data
+    STOR=local
+    backup
+    STOR=remote
+    backup
+    ;;
+  esac
+  unlocking
+}
+
+main "$@"

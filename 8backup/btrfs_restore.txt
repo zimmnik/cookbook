@@ -1,0 +1,53 @@
+#start Fedora Workstation live or start SystemRescueCD (nofirewall?)
+
+mkdir /mnt/backup
+sshfs zorg@thinkpad:/mnt/backup/thinkpad_fedora/system/latest/ /mnt/backup
+cd /mnt/backup && ls -alh
+
+lsblk -o +label,fstype,uuid
+btrfs filesystem show
+
+wipefs -ab /dev/sda2
+wipefs -ab /dev/sda1
+wipefs -ab /dev/sda
+
+parted /dev/sda \
+  mklabel msdos \
+  mkpart primary 0% 512M \
+  set 1 boot on \
+  mkpart primary 512M 100% \
+  print free
+mkfs.ext4 /dev/sda1
+mkfs.btrfs -L thinkpad -m dup -d single /dev/sda2
+
+mkdir /mnt/restore
+mount -o rw,relatime,compress=zstd:1,ssd,space_cache /dev/sda2 /mnt/restore
+time zstdmt -d -c root-2021-06-29.btrfs.zst | btrfs receive -v /mnt/restore/
+btrfs subvolume list /mnt/restore 
+btrfs subvolume snapshot /mnt/restore/latest_weekend/ /mnt/restore/root
+btrfs subvolume delete /mnt/restore/latest_weekend/
+btrfs subvolume list /mnt/restore 
+
+umount /mnt/restore 
+mount -o rw,relatime,compress=zstd:1,ssd,space_cache,subvol=root /dev/sda2 /mnt/restore
+mount /dev/sda1 /mnt/restore/boot/
+
+cd /mnt/restore/ && ls -alh
+time zstdmt -d -c /mnt/backup/boot-2021-06-29.tar.zst | tar -xf -
+
+for i in {dev,sys,proc}; do mount -o bind /$i /mnt/restore/$i; done
+chroot /mnt/restore/ /bin/bash
+
+blkid -s UUID -o value /dev/sda2
+vim /etc/fstab
+
+vim /etc/crypttab
+dracut --regenerate-all --force
+
+vim /etc/default/grub
+grub2-mkconfig -o /boot/grub2/grub.cfg
+mv /boot/grub2/device.map /boot/grub2/device.map.backup
+grub2-install /dev/sda
+
+#dracut -v --no-hostonly -a "rescue" /boot/initramfs-0-rescue-0b5b35daa76047c89106db491de70957.img $(uname -r)
+#https://askbot.fedoraproject.org/en/question/40409/cant-boot-into-rescue-mode-how-to-re-generate-initramfs/
