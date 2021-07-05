@@ -13,21 +13,17 @@ mount -o rw,relatime,compress=zstd:1,ssd,space_cache,subvol=root /dev/sda2 /mnt/
 
 # make root ro snapshot
 btrfs su snapshot -r / /.sv/bk
-btrfs p get /.sv/bk
 # restore root ro snapshot 
-btrfs su list -t /
-btrfs p set /.sv/bk ro false
-mount -o rw,subvol=root/.sv/bk /dev/sda2 /mnt
-sed -i "s%subvol=root%subvol=root/.sv/bk%" /mnt/etc/fstab 
-#reboot with grub option rootflags=subvol=root/.sb/bk
-btrfs su show /
-btrfs su list -t /
 mount -o subvolid=0 /dev/sda2 /mnt && cd /mnt
+btrfs su list -t /mnt
 mv root/.sv/bk/ newroot
 mv root oldroot
 mv newroot root
-btrfs su delete /mnt/oldroot
 #reboot
+#remove oldroot
+mount -o subvolid=0 /dev/sda2 /mnt && cd /mnt
+btrfs su delete /mnt/oldroot
+umount /mnt
 
 #btrfs send -v /.sv/snapshot | zstd -z -T0 - | gpg -c --pinentry-mode loopback --passphrase xxx --compress-algo none -o root.zstd.gpg
 #gpg -d --pinentry-mode loopback --passphrase xxx -o - root.zstd.gpg | zstd -t -T0 
