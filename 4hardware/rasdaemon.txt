@@ -1,0 +1,1 @@
+https://serverfault.com/questions/643542/how-do-i-get-notified-of-ecc-errors-in-linux
