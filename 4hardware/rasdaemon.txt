@@ -5,5 +5,4 @@ apt -y install rasdaemon libdbi-perl libclass-dbi-sqlite-perl
 systemctl cat rasdaemon
 systemctl enable --now rasdaemon
 journalctl -u rasdaemon
-ras-mc-ctl --errors
 ras-mc-ctl --summary
