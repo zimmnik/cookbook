@@ -6,12 +6,12 @@ parted -a optimal /dev/sdb mkpart primary 0% 100%
 lsblk -f
 pvcreate /dev/sdb1
 vgcreate vg_es /dev/sdb1
+vgextend vg_es /dev/sdc1 (add to existing vg)
 lvcreate -L 100G -n lv_es vg_es (-l100%FREE)
 mkfs.ext4 /dev/vg_es/lv_es 
 mkdir -p /mnt/disks/lv_es
 echo "/dev/mapper/vg_es-lv_es /mnt/disks/lv_es defaults 0 0" >> /etc/fstab
 mount /dev/vg_es/lv_es 
-
 
 # filter lvm scan
 vi /etc/lvm/lvm.conf
