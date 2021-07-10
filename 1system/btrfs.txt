@@ -3,7 +3,7 @@ btrfs fi show
 
 mkfs.btrfs -L thinkpad -m dup -d single /dev/sda2
 
-mount -o rw,relatime,compress=zstd:1,ssd,space_cache /dev/sda2 /mnt/restore
+mount -o compress=zstd:1 /dev/sda2 /mnt/restore
 btrfs subvolume list /mnt/restore 
 btrfs subvolume snapshot /mnt/restore/latest_weekend/ /mnt/restore/root
 btrfs subvolume delete /mnt/restore/latest_weekend/
