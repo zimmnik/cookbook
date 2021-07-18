@@ -64,3 +64,14 @@ if ( $programname startswith "smbd" ) then {
 # Log all kernel messages to the console.
 # Logging much else clutters up the screen.
 #kern.* 
+
+# WIN10 => FEDORA
+yum -y install samba-client
+smbclient -U share -L 192.168.93.2
+semanage fcontext -a -t samba_share_t "/share(/.*)?"
+restorecon -R -v /share
+
+vim smb.conf
+	map to guest = never
+
+
