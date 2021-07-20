@@ -1,0 +1,17 @@
+docker run -it --rm centos:8
+
+# check fingerprint of key
+curl -Ls https://packages.grafana.com/gpg.key | gpg --import --import-options show-only
+
+# import key
+curl -Ls https://packages.grafana.com/gpg.key | gpg --import
+
+# get file and it's signature
+curl -LO https://packages.grafana.com/oss/rpm/repodata/repomd.xml
+curl -LO https://packages.grafana.com/oss/rpm/repodata/repomd.xml.asc
+
+# verify
+gpg --verify repomd.xml.asc repomd.xml
+
+# explanation 
+https://serverfault.com/a/1045515
