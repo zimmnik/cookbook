@@ -1,5 +1,4 @@
-yum -y install @"Container Management"
-touch /etc/containers/nodocker
+yum -y install @"Container Management" podman-docker && touch /etc/containers/nodocker
 
 sed -i "s/iptables/firewalld/" /etc/cni/net.d/87-podman-bridge.conflist
 #ip link delete cni-podman0
