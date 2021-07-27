@@ -9,3 +9,19 @@ sudo systemctl start libvirtd
 
 virsh list --all
 virsh console gitlab_deploy_default (Detach Ctrl+Shift+])
+#---------------------------------------------------------
+  config.vm.provider :libvirt do |lv|
+    lv.cpus = 8
+    lv.memory = 16384
+    lv.machine_virtual_size = 64
+  end
+
+  config.vm.provision "shell", inline: <<-SHELL
+    echo -e "resizepart\n1\nYes\n100%\nprint free\nquit" | sudo parted /dev/vda ---pretend-input-tty
+    xfs_growfs / -d
+    df -h
+    #yum -y install epel-release
+    #yum -y install git ansible vim mc less ncdu
+  SHELL
+#----------------------------------------------------------
+
