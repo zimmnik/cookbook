@@ -9,7 +9,11 @@ sudo systemctl start libvirtd
 
 virsh list --all
 virsh console gitlab_deploy_default (Detach Ctrl+Shift+])
+
 #---------------------------------------------------------
+Vagrant.configure("2") do |config|
+  config.vm.box = "centos/8"
+
   config.vm.provider :libvirt do |lv|
     lv.cpus = 8
     lv.memory = 16384
@@ -23,5 +27,6 @@ virsh console gitlab_deploy_default (Detach Ctrl+Shift+])
     #yum -y install epel-release
     #yum -y install git ansible vim mc less ncdu
   SHELL
+end
 #----------------------------------------------------------
 
