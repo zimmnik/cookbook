@@ -21,7 +21,7 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.provision "shell", inline: <<-SHELL
-    echo -e "resizepart\n1\nYes\n100%\nprint free\nquit" | sudo parted /dev/vda ---pretend-input-tty
+    echo -e "resizepart\n1\nYes\n100%\nprint free\nquit" | parted /dev/vda ---pretend-input-tty
     xfs_growfs / -d
     df -h
     #yum -y install epel-release
