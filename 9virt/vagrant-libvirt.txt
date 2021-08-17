@@ -39,4 +39,7 @@ sudo systemctl restart systemd-resolved.service
     libvirt__domain_name: "test.local",
     libvirt__host_ip: "172.28.128.1"
 ...
+#----------------------------------------------------------
+for NET in vagrant-management vagrant-private-dhcp; do virsh net-destroy $NET && virsh net-undefine $NET; done && watch -n 5 virsh net-list --all
+time vagrant up node.test.local && vagrant ssh -c "cat /etc/resolv.conf && ip r && ping -c 4 node.test.local"
 
