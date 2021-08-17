@@ -30,4 +30,13 @@ Vagrant.configure("2") do |config|
   SHELL
 end
 #----------------------------------------------------------
+# Setup DNS for vagrant host
+echo -e "DNS=172.28.128.1\nDomains=~test.local" | sudo tee -a /etc/systemd/resolved.conf && \
+sudo systemctl restart systemd-resolved.service
+...
+  config.vm.network :private_network,
+    type: "dhcp",
+    libvirt__domain_name: "test.local",
+    libvirt__host_ip: "172.28.128.1"
+...
 
