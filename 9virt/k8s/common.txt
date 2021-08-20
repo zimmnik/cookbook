@@ -26,10 +26,10 @@ k get pods --all-namespaces -o wide --field-selector spec.nodeName=k8s-02-node01
 # all objects in namespace
 k api-resources --namespaced=true -n staging
 
-NS=kubernetes-dashboard && k -n $NS api-resources --namespaced=true -o name | sudo xargs --verbose -I {} kubectl -n $NS get {} --show-kind --ignore-not-found 2>&1 | less
+NS=kubernetes-dashboard && k -n $NS api-resources --namespaced=true -o name | xargs --verbose -I {} kubectl -n $NS get {} --show-kind --ignore-not-found 2>&1 | less
 
 # search by name
-k api-resources -o name | sudo xargs --verbose -I {} kubectl get {} --show-kind --ignore-not-found --all-namespaces 2>&1 | grep dash
+k api-resources -o name | xargs --verbose -I {} kubectl get {} --show-kind --ignore-not-found --all-namespaces 2>&1 | grep dash
 
 # get main objects
 k get all,pvc -o wide -n kubernetes-dashboard | less
