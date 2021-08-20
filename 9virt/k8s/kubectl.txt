@@ -14,8 +14,8 @@ kubectl version --short
 sudo sh -c 'kubectl completion bash > /etc/bash_completion.d/kubectl'
 echo 'alias k=kubectl' >> ~/.bashrc
 echo 'complete -F __start_kubectl k' >>~/.bashrc
-echo "alias kg='kubectl config get-contexts'"
-echo "alias kgs='kubectl config use-context'"
+echo "alias kg='kubectl config get-contexts'" >> ~/.bashrc
+echo "alias kgs='kubectl config use-context'" >> ~/.bashrc
 
 kubectl config set-cluster dev --insecure-skip-tls-verify=true --server=https://1.1.9.38:6443
 kubectl config set-cluster corp --insecure-skip-tls-verify=false --certificate-authority=$HOME/.kube/corp_ca.crt
