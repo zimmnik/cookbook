@@ -1,15 +1,7 @@
-# Fedora34
-
 yum group list --hidden
 yum group info vagrant
 
-sudo yum -y install @virtualization @vagrant rsync
-sudo usermod -aG libvirt zorg
-sudo systemctl start libvirtd
-
-echo 'uri_default = "qemu:///system"' > ~/.config/libvirt/libvirt.conf
-virsh list --all
-virsh console gitlab_deploy_default (Detach Ctrl+Shift+])
+sudo yum -y install @vagrant rsync
 
 #---------------------------------------------------------
 Vagrant.configure("2") do |config|

@@ -1,0 +1,51 @@
+#FYI https://libvirt.org/formatnetwork.html#elementVlanTag
+
+yum group list --hidden
+
+sudo yum -y install @virtualization
+sudo usermod -aG libvirt zorg
+sudo systemctl start libvirtd
+
+echo 'uri_default = "qemu:///system"' > ~/.config/libvirt/libvirt.conf
+
+virsh list --all
+virsh console sysrescd (Detach Ctrl+Shift+] or Ctrl + 5)
+
+#---------------------------------------------------------------------------------------------------------------
+mkdir wrtlab && cd wrtlab 
+
+# get openwrt disk image
+curl -LO https://downloads.openwrt.org/releases/19.07.8/targets/x86/64/openwrt-19.07.8-x86-64-combined-ext4.img.gz
+curl -LO https://downloads.openwrt.org/releases/19.07.8/targets/x86/64/sha256sums && \
+sha256sum -c sha256sums --ignore-missing && rm sha256sums
+gunzip openwrt-19.07.8-x86-64-combined-ext4.img.gz
+qemu-img convert -f raw -O qcow2 openwrt-19.07.8-x86-64-combined-ext4.img openwrt-19.07.8-x86-64-combined-ext4.qcow2
+
+# make isolated network
+cat << 'EOF' >> wrtlocalnet.xml && virsh net-define wrtlocalnet.xml && rm -v wrtlocalnet.xml
+<network>
+  <name>wrtlocalnet</name>
+  <bridge stp='off'/>
+  <ip address='192.168.1.201' netmask='255.255.255.0'>
+  </ip>
+</network>
+EOF
+virsh net-start wrtlocalnet && virsh net-autostart wrtlocalnet
+virsh net-list --all
+
+# make openwrt router
+virt-install -n openwrt --osinfo linux2020 --install no_install=yes \
+ --vcpus 1 --ram 256 --video none --graphics none \
+ --disk path=openwrt-19.07.8-x86-64-combined-ext4.qcow2 \
+ -w network=wrtlocalnet -w type=direct,source=enp0s13f0u3u1,source.mode=bridge \
+ --transient 
+
+# make client
+virt-install -n sysrescd --osinfo linux2020 --install no_install=yes  \
+ --vcpus 1 --ram 1024 --video none --graphics none \
+ --disk device=cdrom,path=/home/zorg/ISO/systemrescue-8.03-amd64.iso \
+ -w network=wrtlocalnet \
+ --transient
+# tab, after esc for repaint menu
+# choose menu item with up\down key, tab key for edit boot options, add kernel arg: console=ttyS0, enter for run
+pacman -Syy && pacman -S --noconfirm xterm && eval $(/usr/bin/resize) && mc
