@@ -79,4 +79,6 @@ git checkout src_branch src_file.txt
 git add -A && git status
 git commit
 
-
+#------------------------------------------------------------------------------------
+# gitlab
+git push -o ci.skip
