@@ -39,6 +39,8 @@ virt-install -n openwrt --osinfo linux2020 --install no_install=yes \
  --disk path=openwrt-19.07.8-x86-64-combined-ext4.qcow2 \
  -w network=wrtlocalnet -w type=direct,source=enp0s13f0u3u1,source.mode=bridge \
  --transient 
+ 
+#--noautoconsole
 
 # make client
 virt-install -n sysrescd --osinfo linux2020 --install no_install=yes  \
@@ -49,3 +51,6 @@ virt-install -n sysrescd --osinfo linux2020 --install no_install=yes  \
 # tab, after esc for repaint menu
 # choose menu item with up\down key, tab key for edit boot options, add kernel arg: console=ttyS0, enter for run
 pacman -Syy && pacman -S --noconfirm xterm && eval $(/usr/bin/resize) && mc
+
+#virt-install --noautoconsole
+#virt-customize -a /var/lib/libvirt/images/imagetest1.qcow2 --hostname vm01.test.lab --root-password password:rootpw --ssh-inject 'root:file:labkey.pub' --uninstall cloud-init --selinux-relabel
