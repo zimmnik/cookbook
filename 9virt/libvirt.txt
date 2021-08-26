@@ -39,8 +39,6 @@ virt-install -n openwrt --osinfo linux2020 --install no_install=yes \
  --disk path=openwrt-19.07.8-x86-64-combined-ext4.qcow2 \
  -w network=wrtlocalnet -w type=direct,source=enp0s13f0u3u1,source.mode=bridge \
  --transient 
- 
-#--noautoconsole
 
 # make client
 virt-install -n sysrescd --osinfo linux2020 --install no_install=yes  \
