@@ -2,7 +2,9 @@
 mkdir -v ~/.kube
 # copy kubeconfig
 chmod -Rv og-rwx ~/.kube/
- 
+
+https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/#install-using-native-package-management
+
 sudo bash -c 'cat <<EOF > /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
 name=Kubernetes
