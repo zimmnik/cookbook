@@ -1,0 +1,27 @@
+https://github.com/kubernetes-sigs/multi-tenancy/releases
+
+# Select the latest version of HNC
+HNC_VERSION=v0.8.0
+
+# Forbid HNC from modifying system namespaces
+kubectl label ns kube-system hnc.x-k8s.io/excluded-namespace=true --overwrite
+kubectl label ns kube-public hnc.x-k8s.io/excluded-namespace=true --overwrite
+kubectl label ns kube-node-lease hnc.x-k8s.io/excluded-namespace=true --overwrite
+
+# Install HNC. Afterwards, wait up to 30s for HNC to refresh the certificates on its webhooks.
+kubectl apply -f https://github.com/kubernetes-sigs/multi-tenancy/releases/download/hnc-${HNC_VERSION}/hnc-manager.yaml
+
+#--------------------------------------------------------------------------------------------------------------------------
+https://krew.sigs.k8s.io/docs/user-guide/setup/install/#bash
+sudo yum -y install git
+(
+  set -x; cd "$(mktemp -d)" &&
+  OS="$(uname | tr '[:upper:]' '[:lower:]')" &&
+  ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/\(arm\)\(64\)\?.*/\1\2/' -e 's/aarch64$/arm64/')" &&
+  curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/latest/download/krew.tar.gz" &&
+  tar zxvf krew.tar.gz &&
+  KREW=./krew-"${OS}_${ARCH}" &&
+  "$KREW" install krew
+)
+echo 'export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"' >> ~/.bashrc && bash
+k krew install hns
