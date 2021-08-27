@@ -1,3 +1,9 @@
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-latest.x86_64.rpm
+sudo rpm -Uvh minikube-latest.x86_64.rpm
+minikube start --kubernetes-version='v1.20.7'
+
+k get nodes
+
 https://github.com/kubernetes-sigs/multi-tenancy/releases
 
 # Select the latest version of HNC
@@ -9,7 +15,7 @@ kubectl label ns kube-public hnc.x-k8s.io/excluded-namespace=true --overwrite
 kubectl label ns kube-node-lease hnc.x-k8s.io/excluded-namespace=true --overwrite
 
 # Install HNC. Afterwards, wait up to 30s for HNC to refresh the certificates on its webhooks.
-kubectl apply -f https://github.com/kubernetes-sigs/multi-tenancy/releases/download/hnc-${HNC_VERSION}/hnc-manager.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/multi-tenancy/releases/download/hnc-${HNC_VERSION}/hnc-manager.yaml && sleep 30
 
 #--------------------------------------------------------------------------------------------------------------------------
 https://krew.sigs.k8s.io/docs/user-guide/setup/install/#bash
@@ -25,3 +31,51 @@ sudo yum -y install git
 )
 echo 'export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"' >> ~/.bashrc && bash
 k krew install hns
+
+#-----------------------------------------------------------------------------------------------------------
+# create a namespace for 1) acme-org organisation 2) a team within that org 3) a service owned by that team
+k create namespace acme-org && k create namespace team-a && k create namespace service-1
+# by default, there's no relationship between these namespaces.
+
+# create Site Reliability Engineer (SRE) for team-a
+k -n team-a create role team-a-sre --verb=update --resource=deployments
+k -n team-a create rolebinding team-a-sres --role team-a-sre --serviceaccount=team-a:default
+
+# create super-SRE group across the whole acme org
+kubectl -n acme-org create role org-sre --verb=update --resource=deployments
+kubectl -n acme-org create rolebinding org-sres --role org-sre --serviceaccount=acme-org:default
+
+# none of this affects service-1, since that's a completely independent namespace,
+kubectl -n service-1 get rolebindings
+
+# make acme-org the parent of team-a
+kubectl hns set team-a --parent acme-org
+
+# this won't work, will be rejected since it would cause a cycle
+kubectl hns set acme-org --parent team-a
+
+# make team-a the parent of service-1
+kubectl hns set service-1 --parent team-a
+
+# display the hierarchy
+kubectl hns tree acme-org
+
+# check service-1 again, we'll see that the rolebindings from the ancestor namespaces have been propagated to the child namespace
+kubectl -n service-1 describe roles && kubectl -n service-1 get rolebindings
+# By default, HNC propagates only RBAC Role and RoleBinding objects.
+
+# create ns without cluster-wide permissions
+k hns create team-b -n acme-org
+# show hierarchy
+k hns tree acme-org
+# subnamespaces are created as a child of another namespace, and this parent can never be changed
+# if the parent is deleted, so is the subnamespace
+
+# create Site Reliability Engineer (SRE) for team-b
+kubectl -n team-b create role team-b-wizard --verb=update --resource=deployments
+kubectl -n team-b create rolebinding team-b-wizards --role team-b-wizard --serviceaccount=team-b:default
+
+# assign the service to the new team
+kubectl hns set service-1 --parent team-b
+# show hierarchy
+k hns tree acme-org
