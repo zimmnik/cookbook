@@ -1,10 +1,11 @@
-curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-latest.x86_64.rpm
-sudo rpm -Uvh minikube-latest.x86_64.rpm
-minikube start --kubernetes-version='v1.20.7'
-
-k get nodes
-
 https://github.com/kubernetes-sigs/multi-tenancy/releases
+
+PROS
+1) OBJECT(POLICY) HERITANCE
+2) CREATE NS WITHOUT WITHOUT CLUSTER LEVER PERMISSIONS
+
+#--------------------------------------------------------------------------------------------------------------------------
+# INSTALL HNS
 
 # Select the latest version of HNC
 HNC_VERSION=v0.8.0
@@ -18,6 +19,7 @@ kubectl label ns kube-node-lease hnc.x-k8s.io/excluded-namespace=true --overwrit
 kubectl apply -f https://github.com/kubernetes-sigs/multi-tenancy/releases/download/hnc-${HNC_VERSION}/hnc-manager.yaml && sleep 30
 
 #--------------------------------------------------------------------------------------------------------------------------
+# INSTALL KUBECTL PLUGIN WITH KREW MANAGER
 https://krew.sigs.k8s.io/docs/user-guide/setup/install/#bash
 sudo yum -y install git
 (
@@ -34,37 +36,58 @@ k krew install hns
 
 #-----------------------------------------------------------------------------------------------------------
 # CREATE SUBNAMESPACE
+
 # create subnamespace
 kubectl hns create child -n parent
+
 # verify hns tree
 kubectl hns tree parent
+
 # verify subnamespace
 kubectl get -oyaml -nparent subns child
+
 # verify subnamespace hierachy object
 kubectl get -oyaml -nchild hierarchyconfiguration hierarchy
 
+# subnamespaces are created as a child of another namespace, and this parent can never be changed
+# if the parent is deleted, so is the subnamespace too.
+
 #-----------------------------------------------------------------------------------------------------------
-INSPECT NAMESPACE HIERARCHIES
+# INSPECT NAMESPACE HIERARCHIES
+
 # show full tree
 kubectl hns tree -A
+
 # show part of tree
 kubectl hns tree <name>
+
 # show more detailed
 kubectl hns describe NAMESPACE
 
+#-----------------------------------------------------------------------------------------------------------
+# PROPAGATING POLICIES ACROSS NAMESPACES
 #By default, HNC propagates RBAC Role and RoleBinding objects only
+
+#-----------------------------------------------------------------------------------------------------------
+# DELETE A SUBNAMESPACE
 
 # Subnamespaces are always manipulated via their anchors. For example, you cannot delete a subnamespace by deleting it directly:
 kubectl delete namespace child
+
 # you must delete its anchor (note that subns is a short form of subnamespaceanchor):
 kubectl delete subns child -n parent
 
 # by default isn't allowed cascading deletion.
 kubectl delete subns service-1 -n team-a
+
 # set allowCascadingDeletion on subns
 kubectl hns set service-1 --allowCascadingDeletion
+
 # cascading deletion is allowed now
 kubectl delete subns service-1 -n team-a
+
+#-----------------------------------------------------------------------------------------------------------
+# ORGANIZE FULL NAMESPACES INTO A HIERARCHY
 
 # set fullnamespace ns-foo as parent for ns-bar
 kubectl hns set ns-bar --parent ns-foo
@@ -72,15 +95,20 @@ kubectl hns set ns-bar --parent ns-foo
 kubectl hns set ns-bar --root
 
 #----------------------------------------------------------------------------------------------------------------------------------------------
-LIMIT PROPAGATION
+# LIMIT THE PROPAGATION OF AN OBJECT TO DESCENDANT NAMESPACES
+
 # disallow propagation absolutely
 kubectl annotate secret my-secret -n parent propagate.hnc.x-k8s.io/none=true
+
 # allow propagation only for child with name 'child1'
 kubectl annotate secret my-secret -n parent propagate.hnc.x-k8s.io/treeSelect=child1
+
 # disallow propagation only for children with names 'child2' and 'child3'
 kubectl annotate secret my-secret -n parent propagate.hnc.x-k8s.io/treeSelect="!child2, !child3"
+
 # The object will only be propagated to namespaces whose labels match the label selector. 
 kubectl annotate secret my-secret -n parent propagate.hnc.x-k8s.io/select=child1.tree.hnc.x-k8s.io/depth
+
 # The object will only be propagated to namespaces whose labels don't match the label selector. 
 kubectl annotate secret my-secret -n parent propagate.hnc.x-k8s.io/select="!child2.tree.hnc.x-k8s.io/depth, !child3.tree.hnc.x-k8s.io/depth"
 
@@ -89,115 +117,15 @@ EXCLUDING NAMESPACE FROM HNS
 kubectl label ns <name> hnc.x-k8s.io/excluded-namespace=true
 
 #-----------------------------------------------------------------------------------------------------------
+# MODIFY RESOURCES LIST PROPAGATED BY HNC
 
-# create a namespace for 1) acme-org organisation 2) a team within that org 3) a service owned by that team
-k create namespace acme-org && k create namespace team-a && k create namespace service-1
-# by default, there's no relationship between these namespaces.
+# view config
+kubectl get hncconfiguration config -o yaml 
+kubectl hns config describe
 
-# create Site Reliability Engineer (SRE) for team-a
-k -n team-a create role team-a-sre --verb=update --resource=deployments
-k -n team-a create rolebinding team-a-sres --role team-a-sre --serviceaccount=team-a:default
-
-# create super-SRE group across the whole acme org
-kubectl -n acme-org create role org-sre --verb=update --resource=deployments
-kubectl -n acme-org create rolebinding org-sres --role org-sre --serviceaccount=acme-org:default
-
-# none of this affects service-1, since that's a completely independent namespace,
-kubectl -n service-1 get rolebindings
-
-# make acme-org the parent of team-a
-kubectl hns set team-a --parent acme-org
-
-# this won't work, will be rejected since it would cause a cycle
-kubectl hns set acme-org --parent team-a
-
-# make team-a the parent of service-1
-kubectl hns set service-1 --parent team-a
-
-# display the hierarchy
-kubectl hns tree acme-org
-
-# check service-1 again, we'll see that the rolebindings from the ancestor namespaces have been propagated to the child namespace
-kubectl -n service-1 describe roles && kubectl -n service-1 get rolebindings
-# by default, only RBAC objects are propagated
-
-# create ns without cluster-wide permission
-k hns create team-b -n acme-org
-# show hierarchy
-k hns tree acme-org
-# subnamespaces are created as a child of another namespace, and this parent can never be changed
-# if the parent is deleted, so is the subnamespace too.
-
-# create Site Reliability Engineer (SRE) for team-b
-kubectl -n team-b create role team-b-wizard --verb=update --resource=deployments
-kubectl -n team-b create rolebinding team-b-wizards --role team-b-wizard --serviceaccount=team-b:default
-
-# assign the service to the new team
-k hns set service-1 --parent team-b
-# show hierarchy
-k hns tree acme-org
-
-# verify that the roles and rolebindings have been updated as well.
-kubectl -n service-1 get roles && kubectl -n service-1 get rolebindings
-
-#-----------------------------------------------------------------------------------------------------------
-# OBJECT PROPAGATION
-# create secret for team-b
-kubectl -n team-b create secret generic my-creds --from-literal=password=iamteamb
-
-# check that my-creds object wasn't propagated to service-1
-kubectl -n service-1 get secrets
-
-# for propagation update single cluster-wide configuration for HNC as a whole
+# allow global secrets propagation
 kubectl hns config set-resource secrets --mode Propagate
-# As of HNC v0.6+, the supported modes are Propagate, Remove and Ignore
 
-# verify that my-creds was propagated to service-1:
-kubectl -n service-1 get secrets
-
-# if we move the service back to team-a, the secret disappears because we haven't created it there:
-kubectl hns set service-1 --parent team-a
-kubectl hns tree acme-org
-kubectl -n service-1 get secrets
-
-# view the entire cluster-wide configuration for HNC
-kubectl get hncconfiguration config -o yaml
-
-#-----------------------------------------------------------------------------------------------------------
-# 
-
-# create three subnamespaces for services owned by your team, say service-1, service-2 and service-3
-kubectl hns create service-1 -n team-a
-kubectl hns create service-2 -n team-a
-kubectl hns create service-3 -n team-a
-kubectl hns tree team-a
-
-# add a dev subnamespace under service-1
-kubectl hns create dev -n service-1
-kubectl hns tree team-a
-
-# subnamespaces must have unique names, webhook will prevent you from creating that subnamespace
-kubectl hns create dev -n service-2
-
-# Deleting subns is forbidden with "k delete ns <name>" command
-kubectl delete ns service-3
-# Deleting subns is allowed with "k delete subns <name>" command
-kubectl delete subns service-3 -n team-a
-
-
-
-# create secret on parent
-kubectl -n acme-org create secret generic my-secret --from-literal=password=iamacme
-# check that my-secret is propagated to childrens
-kubectl -n team-a get secrets
-kubectl -n team-b get secrets
-# Disallow propagation to childern "team-a"
-kubectl annotate secret my-secret -n acme-org propagate.hnc.x-k8s.io/treeSelect='!team-a'
-# check that my-secret is propagated to team-b children
-kubectl -n team-a get secrets
-kubectl -n team-b get secrets
-# If we add any children below team-b, the secret won’t be propagated to them, either
-
-# full hns tree
-kubectl hns tree -A
-
+#----------------------------------------------------------------------------------------------------------- 
+# GATHER METRICS
+# HNC exposes metrics https://github.com/kubernetes-sigs/multi-tenancy/blob/master/incubator/hnc/docs/user-guide/how-to.md#gather-metrics
