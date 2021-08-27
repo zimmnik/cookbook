@@ -62,20 +62,23 @@ kubectl hns tree acme-org
 
 # check service-1 again, we'll see that the rolebindings from the ancestor namespaces have been propagated to the child namespace
 kubectl -n service-1 describe roles && kubectl -n service-1 get rolebindings
-# By default, HNC propagates only RBAC Role and RoleBinding objects.
+# by default, HNC propagates RBAC Role and RoleBinding objects only.
 
-# create ns without cluster-wide permissions
+# create ns without cluster-wide permission
 k hns create team-b -n acme-org
 # show hierarchy
 k hns tree acme-org
 # subnamespaces are created as a child of another namespace, and this parent can never be changed
-# if the parent is deleted, so is the subnamespace
+# if the parent is deleted, so is the subnamespace too.
 
 # create Site Reliability Engineer (SRE) for team-b
 kubectl -n team-b create role team-b-wizard --verb=update --resource=deployments
 kubectl -n team-b create rolebinding team-b-wizards --role team-b-wizard --serviceaccount=team-b:default
 
 # assign the service to the new team
-kubectl hns set service-1 --parent team-b
+k hns set service-1 --parent team-b
 # show hierarchy
 k hns tree acme-org
+
+# verify that the roles and rolebindings have been updated as well.
+kubectl -n service-1 get roles && kubectl -n service-1 get rolebindings
