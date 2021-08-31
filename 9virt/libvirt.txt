@@ -1,4 +1,6 @@
 #FYI https://libvirt.org/formatnetwork.html#elementVlanTag
+#FYI https://serverfault.com/questions/1040692/tagged-vlan-on-kvm-with-macvtap-driver?noredirect=1&lq=1
+#FYI https://serverfault.com/questions/1051294/vlan-support-with-libvirt-for-linux-bridge-to-virtual-machines
 
 yum group list --hidden
 
