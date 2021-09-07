@@ -17,30 +17,30 @@ virsh console sysrescd (Detach Ctrl+Shift+] or Ctrl + 5)
 mkdir wrtlab && cd wrtlab 
 
 # get openwrt disk image
-curl -LO https://downloads.openwrt.org/releases/19.07.8/targets/x86/64/openwrt-19.07.8-x86-64-combined-ext4.img.gz
-curl -LO https://downloads.openwrt.org/releases/19.07.8/targets/x86/64/sha256sums && \
+curl -LO https://downloads.openwrt.org/releases/21.02.0/targets/x86/64/openwrt-21.02.0-x86-64-generic-ext4-combined.img.gz
+curl -LO https://downloads.openwrt.org/releases/21.02.0/targets/x86/64/sha256sums
 sha256sum -c sha256sums --ignore-missing && rm sha256sums
-gunzip openwrt-19.07.8-x86-64-combined-ext4.img.gz
-qemu-img convert -f raw -O qcow2 openwrt-19.07.8-x86-64-combined-ext4.img openwrt-19.07.8-x86-64-combined-ext4.qcow2
+
+gunzip openwrt-21.02.0-x86-64-generic-ext4-combined.img.gz 
+qemu-img convert -f raw -O qcow2 openwrt-21.02.0-x86-64-generic-ext4-combined.img openwrt-21.02.0-x86-64-generic-ext4-combined.qcow2
 
 # make isolated network
-cat << 'EOF' >> wrtlocalnet.xml && virsh net-define wrtlocalnet.xml && rm -v wrtlocalnet.xml
+cat << 'EOF' > wrtlocalnet.xml && virsh net-define wrtlocalnet.xml && rm -v wrtlocalnet.xml
 <network>
   <name>wrtlocalnet</name>
   <bridge stp='off'/>
-  <ip address='192.168.1.201' netmask='255.255.255.0'>
+  <ip address='10.99.0.253' netmask='255.255.255.0'>
   </ip>
 </network>
 EOF
-virsh net-start wrtlocalnet && virsh net-autostart wrtlocalnet
-virsh net-list --all
+virsh net-start default && virsh net-start wrtlocalnet && virsh net-list --all
 
-# make openwrt router
 virt-install -n openwrt --osinfo linux2020 --install no_install=yes \
- --vcpus 1 --ram 256 --video none --graphics none \
- --disk path=openwrt-19.07.8-x86-64-combined-ext4.qcow2 \
- -w network=wrtlocalnet -w type=direct,source=enp0s13f0u3u1,source.mode=bridge \
- --transient 
+ --vcpus 1 --ram 256 --video none --graphics none  \
+ --disk path=openwrt-21.02.0-x86-64-generic-ext4-combined.qcow2 \
+ -w network=wrtlocalnet -w network=default \
+ --transient
+sed -i 's/192.168.1.1/10.0.99.254/g' /etc/config/network && reload_config 
 
 # make client
 virt-install -n sysrescd --osinfo linux2020 --install no_install=yes  \
