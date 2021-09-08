@@ -29,7 +29,7 @@ cat << 'EOF' > wrtlocalnet.xml && virsh net-define wrtlocalnet.xml && rm -v wrtl
 <network>
   <name>wrtlocalnet</name>
   <bridge stp='off'/>
-  <ip address='10.99.0.253' netmask='255.255.255.0'>
+  <ip address='192.168.123.253' netmask='255.255.255.0'>
   </ip>
 </network>
 EOF
@@ -40,7 +40,7 @@ virt-install -n openwrt --osinfo linux2020 --install no_install=yes \
  --disk path=openwrt-21.02.0-x86-64-generic-ext4-combined.qcow2 \
  -w network=wrtlocalnet -w network=default \
  --transient
-sed -i 's/192.168.1.1/10.0.99.254/g' /etc/config/network && reload_config 
+sed -i 's/192.168.1.1/192.168.123.254/g' /etc/config/network && reload_config 
 
 # make client
 virt-install -n sysrescd --osinfo linux2020 --install no_install=yes  \
