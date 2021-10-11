@@ -6,6 +6,8 @@ https://github.com/helm/helm/releases
 curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 && chmod 700 get_helm.sh && less get_helm.sh
 ./get_helm.sh --version v3.6.3
 
+helm list --all-namespaces
+
 helm repo update && helm search -l stable/external-dns | less
 
 helm install --name prometheus stable/prometheus --version 9.3.1 \
