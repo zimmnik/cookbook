@@ -1,4 +1,5 @@
 # JAVA
+https://www.oracle.com/java/technologies/javase-java-archive-javase6-downloads.html
 chmod +x jdk-6u45-linux-x64-rpm.bin
 sudo ./jdk-6u45-linux-x64-rpm.bin
 java -version
