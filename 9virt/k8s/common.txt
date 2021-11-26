@@ -69,3 +69,6 @@ k -n testing port-forward debug 8089:8089
 
 #file copy
 k -n testing cp C:\file.py failover-devel:/usr/local/bin/file.py
+
+# kill namespace
+kubectl get namespace "review" -o json   | tr -d "\n" | sed "s/\"finalizers\": \[[^]]\+\]/\"finalizers\": []/"   | kubectl replace --raw /api/v1/namespaces/review/finalize -f -
