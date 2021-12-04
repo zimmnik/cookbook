@@ -1,0 +1,14 @@
+# 
+Ctrl+P 
+default password: admin
+new password - at least 8 characters, different case, the presence of numbers and special characters
+disable user opt-in
+
+# management utility
+mkdir ~/.local/opt/meshcommander
+cd ~/.local/opt/meshcommander
+sudo yum -y install nodejs
+npm install meshcommander
+cd node_modules/
+node meshcommander
+xdg-open http://127.0.0.1:3000
