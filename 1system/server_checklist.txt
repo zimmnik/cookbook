@@ -2,14 +2,19 @@ hardware
 bios
 ipkvm
 installation
-ansible
+
+accounts (passwords and keys)
+network + hostname
+
+ntp
+locale
+ssh
 
 raid/storage
 
-security(accounts, ssh, passwords)
-network
+ssd trim (cat /etc/fstab && sudo systemctl list-timers)
+smart
 
-monitoring
-backup
-update policy
+monitoring (mta?)
+backup & update policy
 wiki
