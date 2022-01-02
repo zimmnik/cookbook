@@ -1,7 +1,9 @@
 nmcli -p connection show
 nmcli connection delete enp4s0
-nmcli connection add type ethernet con-name vlan4 ifname enp4s0 ip4 192.168.4.68/24 gw4 192.168.4.200 ipv4.dns "192.168.16.10 192.168.16.11" ipv4.dns-search "meta.local"
+nmcli connection add type ethernet con-name homenet ifname enp4s0 ip4 192.168.4.68/24 gw4 192.168.4.200 ipv4.dns "192.168.16.10 192.168.16.11" ipv4.dns-search "meta.local"
 nmcli connection modify dmz +ipv4.routes "172.16.5.0/24 172.16.1.200" 
 nmcli connection up vlan4
+
+nmcli c add type vlan con-name DMZ dev eno2 id 3 ipv4.method disabled ipv6.method disabled 
 
 nmcli connection modify meta connection.zone trusted
