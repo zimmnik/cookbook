@@ -3,18 +3,31 @@ bios
 ipkvm
 installation
 
-accounts (passwords and keys)
+accounts + ssh(passwords and keys)
 network + hostname
+  nmcli.txt 
 
 ntp
+  timedatectl set-ntp true
+  timedatectl timesync-status
+  timedatectl
+  
 locale
+  timedatectl set-timezone Europe/Moscow && timedatectl
+  yum -y install glibc-langpack-ru
+  localectl set-locale LANG="ru_RU.UTF-8"
+  localectl set-locale LC_MESSAGES="en_US.UTF-8"
+  localectl
 ssh
 
 raid/storage
 
-ssd trim (cat /etc/fstab && sudo systemctl list-timers)
+ssd trim
+  grep ssd /proc/mounts
+  cat /etc/fstab && sudo systemctl list-timers
 smart
-
+  see smartd.txt 
 monitoring (mta?)
+  see postfix_relay.txt
 backup & update policy
 wiki
