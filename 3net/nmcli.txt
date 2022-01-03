@@ -1,3 +1,5 @@
+hostnamectl set-hostname homelab && hostnamectl
+
 nmcli -p connection show
 nmcli connection delete enp4s0
 nmcli connection add type ethernet con-name homenet ifname enp4s0 ip4 192.168.4.68/24 gw4 192.168.4.200 ipv4.dns "192.168.16.10 192.168.16.11" ipv4.dns-search "meta.local"
