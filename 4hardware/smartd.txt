@@ -1,24 +1,36 @@
+#-l error \      #Report if the number of ATA errors reported in the Summary SMART error log has increased since the last check
+#-l xerror \     #Report if the number of ATA errors reported in the Extended Comprehensive SMART error log has increased since the last check
+#-l selftest \   #Report if the number of failed tests reported in the SMART Self-Test Log has increased since the last check
 #-o on \         #Enables SMART Automatic Offline Testing
-#-W 0,0,50 \     #Report if max temperature is detected
-#-l selftest \   #report if the number of failed tests reported in the SMART Self-Test Log has increased since the last check
-#-l xerror \     #report if the number of ATA errors reported in the Extended Comprehensive SMART error log has increased since the last check
-#-l error \      #report if the number of ATA errors reported in the Summary SMART error log has increased since the last check.
-#-U 0 \          #turn off report if the number of offline uncorrectable sectors is non-zero
-#-C 0 \          #turn off report if the current number of pending sectors is non-zero
-
-DEFAULT \       #apply settins for any device below
--d sat \        #device type
--n standby,q \  #check the device unless it is in SLEEP or STANDBY mode and suppress an informal log message about skipping
+DEFAULT \       #Apply settings for any device below
+-d sat \        #Device type
 -S on \         #Enables SMART autosave of device vendor-specific Attributes
--H \            #Check the health status of the disk with the SMART RETURN STATUS command
--l selfteststs \#report if the Self-Test execution status has changed since the last check.
 -f \            #Check  for 'failure' of any Usage Attributes.
 -p \            #Report anytime that a Prefail Attribute has changed its value since the last check
 -u \            #Report anytime that a Usage Attribute has changed its value since the last check
+-I 194 \        #Ignore device Attribute ID when tracking changes in the Attribute values
+-U 198+ \       #Report if the number of offline uncorrectable sectors has increased since the last check cycle
+-C 197+ \       #Report if the current number of pending sectors has increased since the last check cycle
+-n standby,q \  #Check the device unless it is in SLEEP or STANDBY mode and suppress an informal log message about skipping
+-H \            #Check the health status of the disk with the SMART RETURN STATUS command
+-W 0,0,50 \     #Report if max temperature is detected
 -m root \       #Send a warning email to the email address
--M exec /usr/libexec/smartmontools/smartdnotify		#run the executable PATH instead of the default mail command
+-M exec /usr/libexec/smartmontools/smartdnotify         #run the executable PATH instead of the default mail command
 
-/dev/disk/by-id/ata-PLEXTOR_PX-256M5M_P02310105851 \
--s (C/../../../01|S/../../../02|L/../../6/21) \		#enable periodic tests
--l selftest \   #report if the number of failed tests reported in the SMART Self-Test Log has increased since the last check
--l error        #report if the number of ATA errors reported in the Summary SMART error log has increased since the last check.
+/dev/disk/by-id/ata-KINGSTON_SMS200S360G_50026B723700348A \
+-s (S/../.././21|L/../../1/21) \#enable periodic tests
+-U 0 \          #Report if the number of offline uncorrectable sectors has increased since the last check cycle
+-C 0            #Report if the current number of pending sectors has increased since the last check cycle
+
+/dev/disk/by-id/ata-P4-120_9310926010175 \
+-s (S/../.././21|L/../../2/21) \#enable periodic tests
+-l error \      #Report if the number of ATA errors reported in the Summary SMART error log has increased since the last check
+-l xerror \     #Report if the number of ATA errors reported in the Extended Comprehensive SMART error log has increased since the last check
+-l selftest     #Report if the number of failed tests reported in the SMART Self-Test Log has increased since the last check
+
+/dev/disk/by-id/ata-ST1000DM003-9YN162_S1D3SWHN \
+-s (S/../.././21|L/../../3/21) \#enable periodic tests
+-l error \      #Report if the number of ATA errors reported in the Summary SMART error log has increased since the last check
+-l xerror \     #Report if the number of ATA errors reported in the Extended Comprehensive SMART error log has increased since the last check
+-l selftest \   #Report if the number of failed tests reported in the SMART Self-Test Log has increased since the last check
+-o on           #Enables SMART Automatic Offline Testing
