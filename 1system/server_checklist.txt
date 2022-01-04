@@ -3,6 +3,13 @@ bios
 ipkvm
 installation
 
+update && reboot
+  yum -y update
+  yum upgrade --refresh
+  yum -y install dnf-plugin-system-upgrade
+  sudo dnf system-upgrade download --releasever=35
+  dnf system-upgrade reboot
+
 accounts + ssh(passwords and keys)
 network + hostname
   nmcli.txt 
