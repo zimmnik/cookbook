@@ -6,7 +6,7 @@ yum group list --hidden
 
 sudo yum -y install @virtualization
 sudo usermod -aG libvirt zorg
-sudo systemctl start libvirtd
+sudo systemctl enable libvirtd --now
 
 echo 'uri_default = "qemu:///system"' > ~/.config/libvirt/libvirt.conf
 
