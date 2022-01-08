@@ -1,0 +1,6 @@
+docker run -it --rm ubuntu:20.04 bash -c "\
+apt-get -qq update &> /dev/null && \
+DEBIAN_FRONTEND=noninteractive apt-get -qqy install bind9-dnsutils openssl &> /dev/null && \
+host mail.inno.tech && \
+echo -e 'EHLO\nAUTH LOGIN\n$(openssl base64 <<< LOGIN)\n$(openssl base64 <<< PASSWORD)\nQUIT\n' | \
+openssl s_client -connect mail.inno.tech:587 -starttls smtp -crlf -quiet"
