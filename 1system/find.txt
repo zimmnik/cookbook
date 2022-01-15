@@ -1,0 +1,2 @@
+# find all files youger 1 minute only on root
+find / -xdev -mmin -1 -ls
