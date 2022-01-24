@@ -25,7 +25,7 @@ mkfs.btrfs -L thinkpad -m dup -d single /dev/sda2
 mkdir /mnt/restore
 mount -o compress=zstd:1,subvolid=0 /dev/sda2 /mnt/restore
 time zstdmt -d -c root-2021-06-29.btrfs.zst | btrfs receive -v /mnt/restore/
-btrfs subvolume list /mnt/restore 
+btrfs subvolume list -t /mnt/restore 
 btrfs subvolume snapshot /mnt/restore/latest_weekend/ /mnt/restore/root
 btrfs subvolume delete /mnt/restore/latest_weekend/
 btrfs subvolume list /mnt/restore 
@@ -43,12 +43,11 @@ chroot /mnt/restore/ /bin/bash
 blkid -s UUID
 vim /etc/fstab
 
-vim /etc/crypttab
-dracut --regenerate-all --force
+#vim /etc/crypttab
+#dracut --regenerate-all --force
 
-vim /etc/default/grub
+#vim /etc/default/grub
 grub2-mkconfig -o /boot/grub2/grub.cfg
-mv /boot/grub2/device.map /boot/grub2/device.map.backup
 grub2-install /dev/sda
 exit && reboot
 
