@@ -29,3 +29,4 @@ umount /mnt
 #gpg -d --pinentry-mode loopback --passphrase xxx -o - root.zstd.gpg | zstd -t -T0 
 #gpg -d --pinentry-mode loopback --passphrase xxx -o - root.zstd.gpg | zstd -d -T0 | btrfs receive -v /mnt
 
+btrfs property set -ts /path/to/snapshot ro false
