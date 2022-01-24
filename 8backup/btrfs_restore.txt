@@ -1,7 +1,9 @@
 #start Fedora Workstation live or start SystemRescueCD (nofirewall,copytoram)
+systemctl stop iptables
+passwd
 
 mkdir /mnt/backup
-sshfs zorg@thinkpad:/mnt/backup/thinkpad_fedora/system/latest/ /mnt/backup
+sshfs zorg@fs.home.local:/stor/backup/bro/system/previous/ /mnt/backup
 cd /mnt/backup && ls -alh
 
 lsblk -o +label,fstype,uuid
