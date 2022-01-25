@@ -4,6 +4,9 @@ passwd
 
 mkdir /mnt/backup
 sshfs zorg@fs.home.local:/stor/backup/bro/system/previous/ /mnt/backup
+#mount /dev/sda /mnt/temp
+#mount -o bind /mnt/temp/backup/bro/system/previous/ /mnt/backup/
+
 cd /mnt/backup && ls -alh
 
 lsblk -o +label,fstype,uuid
