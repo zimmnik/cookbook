@@ -31,7 +31,7 @@ time zstdmt -d -c root-2021-06-29.btrfs.zst | btrfs receive -v /mnt/restore/
 btrfs subvolume list -t /mnt/restore 
 btrfs subvolume snapshot /mnt/restore/latest_weekend/ /mnt/restore/root
 btrfs subvolume delete /mnt/restore/latest_weekend/
-btrfs subvolume list /mnt/restore 
+btrfs subvolume list -t /mnt/restore 
 
 umount /mnt/restore 
 mount -o compress=zstd:1,subvol=root /dev/sda2 /mnt/restore
