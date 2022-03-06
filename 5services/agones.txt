@@ -1,0 +1,39 @@
+# my env
+Fedora 34 + libvirt +  minikube + podman + make + xoro
+
+# run k8s
+minikube start --kubernetes-version v1.21.5 -p agones -n 2 --cpus=max --memory=8Gi
+watch kubectl get nodes -o wide
+
+# setup metallb
+virsh net-dumpxml mk-agones 
+k -n metallb-system patch configmaps config -p '{"data":{"config":"address-pools:\n- name: default\n  protocol: layer2\n  addresses:\n  - 192.168.50.230-192.168.50.240\n"}}'
+
+# build docker image
+git clone git@github.com:googleforgames/agones.git
+git checkout release-1.8.0
+cd examples/xonotic/
+sed -i 's/Xonotic Agones/job@zimmnik.ru Xonotic Agones/' server.cfg
+make build
+
+# push image to k8s worker
+docker save -o xonotic.tar gcr.io/agones-images/xonotic-example:0.8
+minikube -p agones cp xonotic.tar agones-m02:/home/docker/xonotic.tar
+minikube -p agones ssh -n agones-m02 'docker load -i xonotic.tar && docker image ls'
+  
+# install agones
+helm repo add agones https://agones.dev/chart/stable
+helm repo update
+helm install agones-main --namespace agones-system --create-namespace agones/agones
+
+# run server
+k apply -f gameserver.yaml
+k get gs
+
+#check server
+sudo yum -y install xoronic
+xonotic-sdl-wrapper
+open Xonotic console by pressing <shift> <ESC>
+connect 192.168.50.55:7220
+status
+
