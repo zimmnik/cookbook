@@ -1,17 +1,15 @@
-# WRT WG TUNNEL SERVER
-
-
 # https://blogs.gnome.org/thaller/2019/03/15/wireguard-in-networkmanager/
 # https://developer.gnome.org/NetworkManager/stable/nm-settings.html
 
 #Fedora34
-yum -y install xterm-resize wireguard-tools
+yum -y install wireguard-tools
 wg genkey | tee vpn.key | wg pubkey > vpn.pub
 nmcli connection add type wireguard con-name VPN ifname wg0 \
 ipv6.method disabled ipv4.method manual ipv4.addresses 192.168.88.253/32 \
 ipv4.dns "192.168.88.254" ipv4.dns-priority -50 \
 wireguard.private-key "zUHaNRpdy/cJU8juzmHlIbcL7pZOuLn33MVmDJy1UBg="
-cat << 'EOF' >> /etc/NetworkManager/system-connections/VPN.nmconnection 
+cat << 'EOF' | tee -a /etc/NetworkManager/system-connections/VPN.nmconnection
+
 [wireguard-peer.hkz1yY3FvAclZtP45C1wyQUS2gUqWVZIIduebVcrCH4=]
 endpoint=10.64.0.1:5151
 persistent-keepalive=25
