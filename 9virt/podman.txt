@@ -34,52 +34,6 @@ CMD ["/usr/sbin/init"]
 #CNI MACVLAN
 https://github.com/containernetworking/plugins/issues/435
 
-cat << 'EOF' >> /etc/systemd/system/io.podman.dhcp.socket 
-[Unit]
-Description=DHCP Client for CNI
-
-[Socket]
-ListenStream=%t/cni/dhcp.sock
-SocketMode=0600
-
-[Install]
-WantedBy=sockets.target
-EOF
-
-cat << 'EOF' >> /etc/systemd/system/io.podman.dhcp.service
-[Unit]
-Description=DHCP Client CNI Service
-Requires=io.podman.dhcp.socket
-After=io.podman.dhcp.socket
-
-[Service]
-Type=simple
-ExecStart=/usr/libexec/cni/dhcp daemon
-TimeoutStopSec=30
-KillMode=process
-
-[Install]
-WantedBy=multi-user.target
-Also=io.podman.dhcp.socket
-EOF
-
-systemctl --now enable io.podman.dhcp.socket
-
-cat << 'EOF' >> /etc/cni/net.d/88-podman-macvlan.conflist 
-{
-    "cniVersion": "0.4.0",
-    "name": "macvlan",
-    "plugins": [
-        {
-            "type": "macvlan",
-            "master": "enp4s0",
-            "ipam": {
-                    "type": "dhcp"
-            }
-        }
-    ]
-}
-EOF
-
-docker run --name nginx --network macvlan --detach --hostname=nginx.home.local nginx
-
+sudo systemctl --now enable cni-dhcp
+sudo spodman network create -d macvlan -o parent=eno1.4 cHOME
+sudo podman run -it --rm --name nginxtest --network cHOME --mac-address=92:d0:c6:0b:29:33 --hostname=nginxtest nginx
