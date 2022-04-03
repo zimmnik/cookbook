@@ -1,11 +1,6 @@
 yum -y install @"Container Management" podman-docker && touch /etc/containers/nodocker
 
-sed -i "s/iptables/firewalld/" /etc/cni/net.d/87-podman-bridge.conflist
 #ip link delete cni-podman0
-
-#rootless only
-sudo sysctl -w "net.ipv4.ping_group_range=0 2000000"
-sudo sh -c 'echo "net.ipv4.ping_group_range = 0 2000000" > /etc/sysctl.d/podman_ping.conf'
 
 cat << 'EOF' >> Dockerfile && docker build -t debug .
 FROM debian
