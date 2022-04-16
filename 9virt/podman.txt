@@ -29,6 +29,10 @@ CMD ["/usr/sbin/init"]
 #CNI MACVLAN
 https://github.com/containernetworking/plugins/issues/435
 
-sudo systemctl --now enable cni-dhcp
-sudo spodman network create -d macvlan -o parent=eno1.4 cHOME
-sudo podman run -it --rm --name nginxtest --network cHOME --mac-address=92:d0:c6:0b:29:33 --hostname=nginxtest nginx
+systemctl --now enable cni-dhcp
+podman network create -d macvlan -o parent=eno1.4 cHOME
+podman run -it --rm --name nginxtest --network cHOME --mac-address=92:d0:c6:0b:29:33 --hostname=nginxtest nginx
+
+podman generate systemd --new --files --name nginxtest
+systemctl daemon-reload 
+systemctl enable container-nginxtest.service --now
