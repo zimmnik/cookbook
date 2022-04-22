@@ -3,8 +3,9 @@
 
 #Fedora34
 yum -y install wireguard-tools
-wg genkey | tee vpn.key | wg pubkey > vpn.pub
+wg genkey | tee /dev/tty | wg pubkey
 nmcli connection add type wireguard con-name VPN ifname wg0 \
+connection.autoconnect no \
 ipv6.method disabled ipv4.method manual ipv4.addresses 192.168.88.253/32 \
 ipv4.dns "192.168.88.254" ipv4.dns-priority -50 \
 wireguard.private-key "zUHaNRpdy/cJU8juzmHlIbcL7pZOuLn33MVmDJy1UBg="
