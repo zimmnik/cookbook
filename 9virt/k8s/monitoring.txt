@@ -1,0 +1,18 @@
+k top nodes --sort-by=cpu
+
+watch -n 5 "ssh dev-k8s-master-2 'calicoctl ipam show --show-blocks'"
+
+watch -n 5 "kubectl get nodes -o custom-columns=NAME:.metadata.name,STATUS:status.conditions[-1].type,MAXPODS:status.allocatable.pods,CIDR:spec.podCIDR"
+
+watch -n 10 'echo;for i in $(kubectl get nodes --no-headers -o custom-columns=":metadata.name"); do kubectl get pods --all-namespaces -o wide --field-selector spec.nodeName=$i | wc -l; done'
+
+watch -n 70 ./docker_containers_info.sh
+#!/bin/bash
+#echo Docker info
+for i in $(kubectl get nodes --no-headers -o custom-columns=IPADDRESS:.status.addresses[0].address | less); do
+  echo -n "$i ";
+  ssh -o ConnectTimeout=3 $i "docker info --format '{{json .}}'" 2> /dev/null | jq .ContainersRunning | tr -d '\n'
+  echo -n ' ' ;
+  ssh -o ConnectTimeout=3 $i "docker info --format '{{json .}}'" 2> /dev/null | jq .Containers | tr -d '\n'
+  echo ' '
+done
