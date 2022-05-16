@@ -4,17 +4,21 @@
 #Fedora34
 yum -y install wireguard-tools
 wg genkey | tee /dev/tty | wg pubkey
-nmcli connection add type wireguard con-name VPN ifname wg0 \
+nmcli connection add type wireguard con-name vpsvpn ifname wg0 \
 connection.autoconnect no \
 ipv6.method disabled ipv4.method manual ipv4.addresses 192.168.88.253/32 \
 ipv4.dns "192.168.88.254" ipv4.dns-priority -50 \
 wireguard.private-key "zUHaNRpdy/cJU8juzmHlIbcL7pZOuLn33MVmDJy1UBg="
-cat << 'EOF' | tee -a /etc/NetworkManager/system-connections/VPN.nmconnection
+cat << 'EOF' | sudo tee -a /etc/NetworkManager/system-connections/vpsvpn.nmconnection
 
 [wireguard-peer.hkz1yY3FvAclZtP45C1wyQUS2gUqWVZIIduebVcrCH4=]
 endpoint=10.64.0.1:5151
 persistent-keepalive=25
 allowed-ips=0.0.0.0/0;
 EOF
-nmcli connection load /etc/NetworkManager/system-connections/VPN.nmconnection 
-nmcli connection up VPN 
+sudo nmcli connection load /etc/NetworkManager/system-connections/VPN.nmconnection 
+nmcli connection up vpsvpn
+
+echo -e 'alias yy="nmcli connection up vpsvpn"\nalias nn="nmcli connection down vpsvpn"' >> ~/.bashrc
+
+#router wg interface reboot
