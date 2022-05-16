@@ -2,8 +2,11 @@
 # https://developer.gnome.org/NetworkManager/stable/nm-settings.html
 
 #Fedora34
-yum -y install wireguard-tools
+yum -y install wireguard-tools traceroute
 wg genkey | tee /dev/tty | wg pubkey
+
+#router wg interface setup and reboot
+
 nmcli connection add type wireguard con-name vpsvpn ifname wg0 \
 connection.autoconnect no \
 ipv6.method disabled ipv4.method manual ipv4.addresses 192.168.88.253/32 \
@@ -21,4 +24,4 @@ nmcli connection up vpsvpn
 
 echo -e 'alias yy="nmcli connection up vpsvpn"\nalias nn="nmcli connection down vpsvpn"' >> ~/.bashrc
 
-#router wg interface reboot
+traceroute google.com; resolvectl query google.com
