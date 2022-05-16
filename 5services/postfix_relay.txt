@@ -1,7 +1,22 @@
-yum -y install postfix mailx
+#Fedora 36 + Google 2-Step Verification + App passwords
+yum -y install postfix mailx cyrus-sasl-plain
+
 sed -i '/^root:/s/^/#/g' /etc/aliases
 echo "root:           mail@box.com" >> /etc/aliases
 newaliases
-echo "myhostname=${HOSTNAME}" >> /etc/postfix/main.cf
+
+echo "[smtp.gmail.com]:587    username@gmail.com:password > /etc/postfix/sasl_passwd
+chmod 600 /etc/postfix/sasl_passwd
+postmap /etc/postfix/sasl_passwd
+
+cat <<EOF >> /etc/postfix/main.cf
+myhostname=${HOSTNAME}
+relayhost = [smtp.gmail.com]:587
+smtp_use_tls = yes
+smtp_sasl_auth_enable = yes
+smtp_sasl_security_options =
+smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+EOF
+
 systemctl enable postfix --now
-echo TEST | mail root
+echo TEST | mail -s "TEST" root && journalctl -u postfix -f
