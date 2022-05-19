@@ -1,0 +1,2 @@
+kubectl krew install resource-capacity
+time for ns in $(k get ns --no-headers -o custom-columns=":metadata.name"); do printf '%-30s' $ns; k resource-capacity --pod-count -n $ns -u | grep ^* | tr -d 'm()'; done | sort -n -r -k 4
