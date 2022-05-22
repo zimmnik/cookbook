@@ -1,4 +1,4 @@
-yum group list --hidden
+yum group list --hidden -v
 yum group info vagrant
 
 sudo yum -y install @vagrant rsync
