@@ -33,3 +33,5 @@ kubectl config view
 
 # config-info
 ls -alh ~/.kube && env | grep KUBECONFIG
+
+https://popeyecli.io/
