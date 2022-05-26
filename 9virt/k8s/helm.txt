@@ -8,8 +8,10 @@ curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scr
 
 helm list --all-namespaces
 
-helm repo update && helm search -l stable/external-dns | less
-
+helm repo update && helm search repo -l stable/external-dns | less
+helm show values influxdata/telegraf > values-orig.yaml
+helm search repo --regexp influxdata/* -l | less
+ 
 helm install --name prometheus stable/prometheus --version 9.3.1 \
 --namespace logging  --set \
 server.ingress.enabled=true,\
