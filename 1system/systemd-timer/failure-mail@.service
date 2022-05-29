@@ -1,0 +1,7 @@
+[Unit]
+Description=My failure handler for %i
+
+[Service]
+Type=oneshot
+# Perform some special action for when %i exits unexpectedly.
+ExecStart=bash -c "printf \"Subject: %i@$HOSTNAME\nFrom: root <blabla>\n\n$(systemctl status --full %i)\" | sendmail root"
