@@ -36,3 +36,7 @@ ls -alh ~/.kube && env | grep KUBECONFIG
 
 https://github.com/robscott/kube-capacity
 https://popeyecli.io/
+https://habr.com/ru/company/otus/blog/509334/
+https://codeberg.org/hjacobs/kube-janitor. #xxx @yyy
+https://codeberg.org/hjacobs/kube-downscaler. #xxx @yyy
+https://codeberg.org/hjacobs/kube-resource-report. #xxx @yyy
