@@ -54,3 +54,6 @@ pacman -Syy && pacman -S --noconfirm xterm && eval $(/usr/bin/resize) && mc
 
 #virt-install --noautoconsole
 #virt-customize -a /var/lib/libvirt/images/imagetest1.qcow2 --hostname vm01.test.lab --root-password password:rootpw --ssh-inject 'root:file:labkey.pub' --uninstall cloud-init --selinux-relabel
+
+#---------------------------------------------------------------------------------------------------------------
+virsh net-update vagrant-libvirt add dns-host '<host ip="192.168.11.11"> <hostname>blah2.laine.org</hostname> </host>' --live --config
