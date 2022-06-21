@@ -34,6 +34,7 @@ kubectl config view
 # config-info
 ls -alh ~/.kube && env | grep KUBECONFIG
 
+https://github.com/corneliusweig/rakkess
 https://github.com/robscott/kube-capacity
 https://popeyecli.io/
 https://habr.com/ru/company/otus/blog/509334/
