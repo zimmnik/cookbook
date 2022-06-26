@@ -1,11 +1,14 @@
-#Fedora 36 + Google 2-Step Verification + App passwords
-yum -y install postfix mailx cyrus-sasl-plain
+Google: 2-Step Verification + App passwords
+or 
+Yandex: Mail → All settings → Email clients → Use a mail client to retrieve your Yandex mail → From the imap.yandex.com server via IMAP → true
+
+yum -y install postfix cyrus-sasl-plain
 
 sed -i '/^root:/s/^/#/g' /etc/aliases
-echo "root:           mail@box.com" >> /etc/aliases
+echo "root:           receiver@mail.box" >> /etc/aliases
 newaliases
 
-echo "[smtp.gmail.com]:587    username@gmail.com:password > /etc/postfix/sasl_passwd
+echo "[smtp.gmail.com]:587    sender@mail.box:password > /etc/postfix/sasl_passwd
 chmod 600 /etc/postfix/sasl_passwd
 postmap /etc/postfix/sasl_passwd
 
@@ -19,4 +22,4 @@ smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
 EOF
 
 systemctl enable postfix --now
-echo TEST | mail -s "TEST" root && journalctl -u postfix -f
+printf "Subject: TEST@%s\n\n%s" "${HOSTNAME}" "TEST" | sendmail -f sender@mail.box root && journalctl -u postfix -f
