@@ -8,18 +8,23 @@ sed -i '/^root:/s/^/#/g' /etc/aliases
 echo "root:           receiver@mail.box" >> /etc/aliases
 newaliases
 
-echo "[smtp.gmail.com]:587    sender@mail.box:password > /etc/postfix/sasl_passwd
+echo "[smtp.domain.com]:587    sender@mail.box:password > /etc/postfix/sasl_passwd
 chmod 600 /etc/postfix/sasl_passwd
 postmap /etc/postfix/sasl_passwd
 
+echo "/.+/    sender@mail.box" >> /etc/postfix/generic
+chmod 600 /etc/postfix/generic
+postmap /etc/postfix/generic
+
 cat <<EOF >> /etc/postfix/main.cf
-myhostname=${HOSTNAME}
-relayhost = [smtp.gmail.com]:587
+
+relayhost = [smtp.domain.com]:587
 smtp_use_tls = yes
 smtp_sasl_auth_enable = yes
 smtp_sasl_security_options =
 smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+smtp_generic_maps = regexp:/etc/postfix/generic
 EOF
 
 systemctl enable postfix --now
-printf "Subject: TEST@%s\n\n%s" "${HOSTNAME}" "TEST" | sendmail -f sender@mail.box root && journalctl -u postfix -f
+echo "MAILBODY" | mail -s "MAILSUBJECT" root && journalctl -u postfix -f
