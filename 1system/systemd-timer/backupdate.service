@@ -1,10 +1,9 @@
 [Unit]
+After=default.target
 Description=A job to run backupdate script
 OnFailure=failure-mail@%N.service
+Requires=default.target
 
 [Service]
-Type=simple
 ExecStart=/usr/local/bin/backupdate.sh
-
-[Install]
-WantedBy=default.target
+Type=simple
