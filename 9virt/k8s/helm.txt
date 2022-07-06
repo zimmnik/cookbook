@@ -12,7 +12,7 @@ helm repo update && helm search repo -l stable/external-dns | less
 helm show values influxdata/telegraf > values-orig.yaml
 helm search repo --regexp influxdata/* -l | less
  
-helm install --name prometheus stable/prometheus --version 9.3.1 \
+helm install prometheus stable/prometheus --version 9.3.1 \
 --namespace logging  --set \
 server.ingress.enabled=true,\
 server.ingress.hosts[0]=prometheus.10.100.1.13.nip.io,\
