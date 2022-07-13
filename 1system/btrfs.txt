@@ -15,12 +15,17 @@ mount -o rw,relatime,compress=zstd:1,ssd,space_cache,subvol=root /dev/sda2 /mnt/
 btrfs su snapshot -r / /.sv/bk
 # restore root ro snapshot
 
-mount -o subvolid=0 /dev/sda2 /mnt && cd /mnt
-btrfs su list -t /mnt
-btrfs property set -t subvol root/.sv/bk/ ro false
-mv root/.sv/bk/ newroot
-mv root oldroot
-mv newroot root
+DEV="/dev/nvme0n1p2" && \
+MNT=$(mktemp -d) && \
+mount -o subvolid=0 "${DEV}" "${MNT}" && cd "${MNT}" && \
+btrfs su list -t "${MNT}" && \
+btrfs property set -t subvol root/.sv/bk/ ro false && \
+mv root/.sv/bk/ newroot && \
+mv root oldroot && \
+mv newroot root && \
+btrfs su list -t "${MNT}" && \
+cd ~ && umount -v "${MNT}"
+
 #reboot
 #remove oldroot
 mount -o subvolid=0 /dev/sda2 /mnt && cd /mnt
