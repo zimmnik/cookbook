@@ -13,9 +13,11 @@ mount -o rw,relatime,compress=zstd:1,ssd,space_cache,subvol=root /dev/sda2 /mnt/
 
 # make root ro snapshot
 btrfs su snapshot -r / /.sv/bk
-# restore root ro snapshot 
+# restore root ro snapshot
+
 mount -o subvolid=0 /dev/sda2 /mnt && cd /mnt
 btrfs su list -t /mnt
+btrfs property set -t subvol root/.sv/bk/ ro false
 mv root/.sv/bk/ newroot
 mv root oldroot
 mv newroot root
@@ -29,5 +31,4 @@ umount /mnt
 #gpg -d --pinentry-mode loopback --passphrase xxx -o - root.zstd.gpg | zstd -t -T0 
 #gpg -d --pinentry-mode loopback --passphrase xxx -o - root.zstd.gpg | zstd -d -T0 | btrfs receive -v /mnt
 
-btrfs property set -ts /path/to/snapshot ro false
 systemd.unit=rescue.target
