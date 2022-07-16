@@ -11,7 +11,10 @@ update && reboot
   dnf system-upgrade reboot
 
 accounts + ssh(passwords and keys)
-network + hostname
+network
+  hostname
+  wifi hotspot
+  vpn
   nmcli.txt 
 
 ntp
