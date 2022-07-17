@@ -5,24 +5,8 @@ chmod -Rv og-rwx ~/.kube/
 
 https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/#install-using-native-package-management
 
-sudo bash -c 'cat <<EOF > /etc/yum.repos.d/kubernetes.repo
-[kubernetes]
-name=Kubernetes
-baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
-enabled=1
-gpgcheck=1
-repo_gpgcheck=1
-gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
-EOF'
-
-sudo yum -y install kubectl-1.21.4-0 bash-completion 'dnf-command(versionlock)'
-sudo dnf versionlock add kubectl-1.21.4-0 && sudo dnf versionlock list
-kubectl version --short
-sudo sh -c 'kubectl completion bash > /etc/bash_completion.d/kubectl'
-echo 'alias k=kubectl' >> ~/.bashrc
-echo 'complete -F __start_kubectl k' >>~/.bashrc
-echo "alias kg='kubectl config get-contexts'" >> ~/.bashrc
-echo "alias kgs='kubectl config use-context'" >> ~/.bashrc
+#sudo yum -y install kubectl-1.21.4-0 bash-completion 'dnf-command(versionlock)'
+#sudo dnf versionlock add kubectl-1.21.4-0 && sudo dnf versionlock list
 
 kubectl config set-cluster dev --insecure-skip-tls-verify=true --server=https://1.1.9.38:6443
 kubectl config set-cluster corp --insecure-skip-tls-verify=false --certificate-authority=$HOME/.kube/corp_ca.crt
@@ -34,10 +18,16 @@ kubectl config view
 # config-info
 ls -alh ~/.kube && env | grep KUBECONFIG
 
-https://github.com/corneliusweig/rakkess
-https://github.com/robscott/kube-capacity
+#https://github.com/corneliusweig/rakkess
+k krew install access-matrix &&  k access-matrix
+
+#https://github.com/robscott/kube-capacity
+k krew install resource-capacity && k resource-capacity -u
+
+#https://github.com/ahmetb/kubectx
+k krew install ctx && k ctx
+k krew install ns && k ns
+
 https://popeyecli.io/
+https://k9scli.io/
 https://habr.com/ru/company/otus/blog/509334/
-https://codeberg.org/hjacobs/kube-janitor. #xxx @yyy
-https://codeberg.org/hjacobs/kube-downscaler. #xxx @yyy
-https://codeberg.org/hjacobs/kube-resource-report. #xxx @yyy
