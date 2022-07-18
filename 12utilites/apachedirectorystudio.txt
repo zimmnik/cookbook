@@ -1,0 +1,16 @@
+curl -LO https://dlcdn.apache.org/directory/studio/2.0.0.v20210717-M17/ApacheDirectoryStudio-2.0.0.v20210717-M17-linux.gtk.x86_64.tar.gz
+sudo yum -y install java-latest-openjdk
+
+cat << 'EOF' >> ~/.local/share/applications/ApacheDirectoryStudio.desktop
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name="Apache Directory Studio"
+Icon=/home/zorg/.local/bin/ApacheDirectoryStudio/icon.xpm
+Exec="/home/zorg/.local/bin/ApacheDirectoryStudio/ApacheDirectoryStudio"
+Categories=Development;IDE;
+Terminal=false
+StartupNotify=true
+EOF
+desktop-file-validate ~/.local/share/applications/ApacheDirectoryStudio.desktop
+update-desktop-database ~/.local/share/applications
