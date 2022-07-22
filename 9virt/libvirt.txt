@@ -10,8 +10,23 @@ sudo systemctl enable libvirtd --now
 
 mkdir -p ~/.config/libvirt/ && echo 'uri_default = "qemu:///system"' > ~/.config/libvirt/libvirt.conf
 
-virsh list --all
-virsh console sysrescd (Detach Ctrl+Shift+] or Ctrl + 5)
+#---------------------------------------------------------------------------------------------------------------
+N=local-zorg
+P="~/.local/libvirt/images"
+mkdir -p $P &&virsh pool-define-as $N dir --target $P && virsh pool-build $N && virsh pool-start $N && virsh pool-autostart $N && virsh pool-list --all
+virsh pool-destroy $N && virsh pool-undefine $N && virsh pool-list --all 
+
+# copy iso
+
+virt-install -n sysrescd --osinfo linux2020 --install no_install=yes   --vcpus 1 --ram 1024 --video none --graphics none  --disk device=cdrom,path=/home/zorg/.local/libvirt/images/systemrescue-8.03-amd64.iso  -w network=default  --transient && virsh destroy sysrescd
+# tab, after esc for repaint menu
+# choose menu item with up\down key, tab key for edit boot options, add kernel arg: console=ttyS0, enter for run
+pacman -Syy && pacman -S --noconfirm xterm && eval $(/usr/bin/resize) && mc
+
+#---------------------------------------------------------------------------------------------------------------
+#virt-install --noautoconsole
+#virt-customize -a /var/lib/libvirt/images/imagetest1.qcow2 --hostname vm01.test.lab --root-password password:rootpw --ssh-inject 'root:file:labkey.pub' --uninstall cloud-init --selinux-relabel
+#virsh net-update vagrant-libvirt add dns-host '<host ip="192.168.11.11"> <hostname>blah2.laine.org</hostname> </host>' --live --config
 
 #---------------------------------------------------------------------------------------------------------------
 mkdir wrtlab && cd wrtlab 
@@ -51,15 +66,3 @@ virt-install -n sysrescd --osinfo linux2020 --install no_install=yes  \
 # tab, after esc for repaint menu
 # choose menu item with up\down key, tab key for edit boot options, add kernel arg: console=ttyS0, enter for run
 pacman -Syy && pacman -S --noconfirm xterm && eval $(/usr/bin/resize) && mc
-
-#virt-install --noautoconsole
-#virt-customize -a /var/lib/libvirt/images/imagetest1.qcow2 --hostname vm01.test.lab --root-password password:rootpw --ssh-inject 'root:file:labkey.pub' --uninstall cloud-init --selinux-relabel
-
-#---------------------------------------------------------------------------------------------------------------
-virsh net-update vagrant-libvirt add dns-host '<host ip="192.168.11.11"> <hostname>blah2.laine.org</hostname> </host>' --live --config
-
-#---------------------------------------------------------------------------------------------------------------
-N=local-zorg
-P="~/.local/libvirt/images"
-mkdir -p $P &&virsh pool-define-as $N dir --target $P && virsh pool-build $N && virsh pool-start $N && virsh pool-autostart $N && virsh pool-list --all
-virsh pool-destroy $N && virsh pool-undefine $N && virsh pool-list --all 
