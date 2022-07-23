@@ -37,3 +37,19 @@ umount /mnt
 #gpg -d --pinentry-mode loopback --passphrase xxx -o - root.zstd.gpg | zstd -d -T0 | btrfs receive -v /mnt
 
 systemd.unit=rescue.target
+
+sudo mount -o degraded /dev/vdb /mnt
+btrfs fi show /mnt
+btrfs replace start 2 /dev/vdc /mnt
+watch btrfs replace status /mnt
+btrfs fi show /mnt
+btrfs filesystem usage /mnt | less 
+btrfs balance /mnt
+
+time dd if=/dev/urandom of=/dev/vdb bs=1024 seek=$((RANDOM%10)) count=1572864 conv=notrunc oflag=direct
+btrfs scrub start -BR /mnt; echo $?
+btrfs device stats --check /mnt; echo $?
+btrfs device stats -z /mnt; echo $?
+btrfs device stats --check /mnt; echo $?
+
+
