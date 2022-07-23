@@ -52,4 +52,6 @@ btrfs device stats --check /mnt; echo $?
 btrfs device stats -z /mnt; echo $?
 btrfs device stats --check /mnt; echo $?
 
+btrfs balance start -dconvert=raid10 -mconvert=raid1c4 /mnt
+
 
