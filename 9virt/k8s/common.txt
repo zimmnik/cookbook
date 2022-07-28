@@ -43,6 +43,10 @@ time k -n staging rollout status sts/staging-mq -R -w
 k -n staging delete pvc/forebank-mq-pvc
 
 #------------------------------------------------------------------
+kubectl -n <namespace> patch daemonset <name-of-daemon-set> -p '{"spec": {"template": {"spec": {"nodeSelector": {"non-existing": "true"}}}}}'
+kubectl -n <namespace> patch daemonset <name-of-daemon-set> --type json -p='[{"op": "remove", "path": "/spec/template/spec/nodeSelector/non-existing"}]'
+
+#------------------------------------------------------------------
 
 k create configmap demo --dry-run --from-file config.json,elastalert.yaml -o yaml | less
 #----------------------------------------------------------------------
