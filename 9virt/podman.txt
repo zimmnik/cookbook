@@ -27,12 +27,31 @@ CMD ["/usr/sbin/init"]
 
 ########################################################################
 #CNI MACVLAN
-https://github.com/containernetworking/plugins/issues/435
+yum -y install containernetworking-plugins
+sudo systemctl --now enable cni-dhcp
+cat << EOF | sudo tee -a /etc/containers/containers.conf
+[network]
+network_backend = "cni"
+EOF
+sudo docker network create -d macvlan -o parent=eno1.4 cHOME ?? sudo docker network ls
+sudo docker build -t alpine-samba . 
+sudo podman run -it --rm --name nginxtest --network cHOME --mac-address=92:d0:c6:0b:29:33 --hostname=nginxtest nginx
 
-systemctl --now enable cni-dhcp
-podman network create -d macvlan -o parent=eno1.4 cHOME
-podman run -it --rm --name nginxtest --network cHOME --mac-address=92:d0:c6:0b:29:33 --hostname=nginxtest nginx
-
+########################################################################
+# SYSTEMD UNIT
 podman generate systemd --new --files --name nginxtest
-systemctl daemon-reload 
+systemctl daemon-reload
 systemctl enable container-nginxtest.service --now
+
+########################################################################
+# POD
+#rootfull mode is necessary for publishing ports with number below 1000
+
+sudo docker create --pod new:allstor --cpus 0.5 --memory 128M --publish 445:445 --init-ctr=once --volume allstor:/srv --name allstor-init allstor-init:latest
+sudo docker create --pod allstor --cpus 1 --memory 512M --volume allstor:/srv --name allstor-samba allstor-samba:latest
+sudo docker generate kube allstor > pod.yml
+sudo docker pod start allstor
+sudo docker pod rm -f allstor; sudo docker volume rm allstor -f; sudo docker volume ls
+
+sudo docker play kube --replace pod.yml
+sudo docker play kube --down pod.yml
