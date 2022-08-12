@@ -66,3 +66,5 @@ virt-install -n sysrescd --osinfo linux2020 --install no_install=yes  \
 # tab, after esc for repaint menu
 # choose menu item with up\down key, tab key for edit boot options, add kernel arg: console=ttyS0, enter for run
 pacman -Syy && pacman -S --noconfirm xterm && eval $(/usr/bin/resize) && mc
+
+virt-install -n OL9 --osinfo ol8.5 --boot uefi --vcpus 8 --ram 4096 --disk size=16 -w network=default --location OracleLinux-R9-U0-x86_64-boot-uek.iso,kernel=images/pxeboot/vmlinuz,initrd=/images/pxeboot/initrd.img --extra-args "inst.stage2=hd:LABEL=OL-9-0-0-BaseOS-x86_64 quiet inst.ks=https://raw.githubusercontent.com/zimmnik/provisioner/master/kickstart/customO.cfg"
