@@ -49,6 +49,9 @@ vim /etc/fstab
 #vim /etc/crypttab
 #dracut --regenerate-all --force
 
+rm /boot/grub2/grubenv
+vi /boot/loader/entries/*
+
 #vim /etc/default/grub
 #GRUB_DISABLE_OS_PROBER=true
 grub2-mkconfig -o /boot/grub2/grub.cfg
