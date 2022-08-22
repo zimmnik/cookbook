@@ -28,3 +28,4 @@ EOF
 
 systemctl enable postfix --now
 echo "MAILBODY" | mail -s "MAILSUBJECT" root && journalctl -u postfix -f
+printf "Subject: ${SUBJECT}\nFrom: root <blabla>\n\n${MAILBODY}" | sendmail root
