@@ -1,7 +1,7 @@
 [Unit]
 Description=Schedule a backupdate every 1 day
-RefuseManualStart=yes  # Allow manual starts
-RefuseManualStop=no   # Allow manual stops
+RefuseManualStart=yes
+RefuseManualStop=no
 
 [Timer]
 OnCalendar=*-*-* 00:00:00
