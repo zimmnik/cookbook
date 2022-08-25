@@ -1,5 +1,16 @@
 k run -it debug --image=alpine --restart=Never --rm=true -- sh
 
+#-----------------------------------------------------------------------------------------------------------------------------
+k run -it debug --image=alpine --restart=Never --rm=true --overrides='{"spec":{"serviceAccountName":"api-ingress-sa"}}' -- sh
+apk add curl
+APISERVER=https://kubernetes.default.svc
+SERVICEACCOUNT=/var/run/secrets/kubernetes.io/serviceaccount
+TOKEN=$(cat ${SERVICEACCOUNT}/token)
+CACERT=${SERVICEACCOUNT}/ca.crt
+curl --cacert ${CACERT} --header "Authorization: Bearer ${TOKEN}" -X GET ${APISERVER}/api
+curl --cacert ${CACERT} --header "Authorization: Bearer ${TOKEN}" -X GET ${APISERVER}/apis/networking.k8s.io/v1beta1/namespaces/review-ima-facade-acrux/ingresses
+#-----------------------------------------------------------------------------------------------------------------------------
+
 # run command on pod
 sudo kubectl exec -it pod/fortebank-mq-2 -n fortebank -- bash
 
