@@ -1,3 +1,5 @@
+k run -it debug --image=alpine --restart=Never --rm=true -- sh
+
 # run command on pod
 sudo kubectl exec -it pod/fortebank-mq-2 -n fortebank -- bash
 
