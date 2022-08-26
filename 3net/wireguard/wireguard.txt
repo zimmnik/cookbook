@@ -25,3 +25,5 @@ nmcli connection up vpsvpn
 echo -e 'alias yy="nmcli connection up vpsvpn"\nalias nn="nmcli connection down vpsvpn"' >> ~/.bashrc
 
 traceroute google.com; resolvectl query google.com
+
+#echo module wireguard +p > /sys/kernel/debug/dynamic_debug/control

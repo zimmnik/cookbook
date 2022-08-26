@@ -9,8 +9,10 @@ watch -n 10 'echo;for i in $(kubectl get nodes --no-headers -o custom-columns=":
 watch -n 70 ./docker_containers_info.sh
 #!/bin/bash
 #echo Docker info
-for i in $(kubectl get nodes --no-headers -o custom-columns=IPADDRESS:.status.addresses[0].address | less); do
-  echo -n "$i ";
+for i in $(kubectl get nodes --no-headers -o custom-columns=IPADDRESS:.status.addresses[1].address | less); do
+  #echo -n -e "$(kubectl resource-capacity -u --pod-count --node-labels kubernetes.io/hostname=$i | tail -1)\t"
+  echo -n -e "$i\t\t";
+  echo -n -e "$(kubectl get nodes -o custom-columns="STATUS:status.conditions[?(@.status=='True')].type" $i | tail -1)\t"
   ssh -o ConnectTimeout=3 $i "docker info --format '{{json .}}'" 2> /dev/null | jq .ContainersRunning | tr -d '\n'
   echo -n ' ' ;
   ssh -o ConnectTimeout=3 $i "docker info --format '{{json .}}'" 2> /dev/null | jq .Containers | tr -d '\n'
