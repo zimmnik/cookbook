@@ -17,6 +17,7 @@ chmod 600 /etc/postfix/generic
 postmap /etc/postfix/generic
 
 cat <<EOF >> /etc/postfix/main.cf
+mydomain = local
 
 relayhost = [smtp.domain.com]:587
 smtp_use_tls = yes
