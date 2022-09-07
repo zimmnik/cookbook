@@ -1,0 +1,43 @@
+#---------------------------------------------------------------------------------------
+Configuring the iLO virtual serial port in the host system RBSU
+# https://support.hpe.com/hpesc/public/docDisplay?docId=a00045841en_us&docLocale=en_US#N10032
+
+The following procedure describes the settings user must configure before user can use the iLO Virtual Serial Port. This procedure is required for both Windows and Linux systems.
+    Optional: If user access the server remotely, start an iLO remote console session.
+    Restart or power on the server.
+    Press F9 in the HP ProLiant POST screen.
+    Select System Options, and then press Enter.
+    Select Serial Port Options, and then press Enter.
+    Select Virtual Serial Port, and then press Enter.
+    Select the COM port user want to use, and then press Enter.
+    Press ESC twice to return to the main menu.
+    Select BIOS Serial Console & EMS, and then press Enter.
+    Select BIOS Serial Console Port, and then press Enter.
+    Select the COM port that matches the value selected in step 7, and then press Enter.
+    Select BIOS Serial Console Baud Rate, and then press Enter.
+    Select 115200, and then press Enter.
+    Select EMS Console, and then press Enter.
+    Select the COM port that matches the value selected in step 7, and then press Enter.
+    Exit the system RBSU.
+
+#---------------------------------------------------------------------------------------
+Configurig ssh client 
+~/.ssh/config
+...
+Host ilo
+        User root
+        Hostname 192.168.1.253
+        HostKeyAlgorithms +ssh-dss
+        KexAlgorithms +diffie-hellman-group1-sha1
+        Ciphers +aes128-cbc
+...
+
+#---------------------------------------------------------------------------------------
+Configurig GRUB on host
+/etc/default/grub 
+...
+GRUB_TERMINAL_OUTPUT="console serial"
+GRUB_SERIAL_COMMAND="serial --speed=115200 --unit=0 --word=8 --parity=no --stop=1"
+GRUB_CMDLINE_LINUX="console=tty0 console=ttyS0,115200"
+...
+grub2-mkconfig -o /boot/grub2/grub.cfg

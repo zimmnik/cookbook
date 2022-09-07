@@ -47,10 +47,13 @@ systemctl enable container-nginxtest.service --now
 # POD
 #rootfull mode is necessary for publishing ports with number below 1000
 
-sudo docker create --pod new:allstor --cpus 0.5 --memory 128M --publish 445:445 --init-ctr=once --volume allstor:/srv --name allstor-init allstor-init:latest
-sudo docker create --pod allstor --cpus 1 --memory 512M --volume allstor:/srv --name allstor-samba allstor-samba:latest
-sudo docker generate kube allstor > pod.yml
-sudo docker pod start allstor
+cd allstor-init && sudo docker build -t allstor-init:latest; cd ..; sudo docker image ls
+cd allstor-samba && sudo docker build -t allstor-samba:latest; cd ..; sudo docker image ls
+sudo docker create --pod new:allstor --cpus 0.5 --memory 128M --publish 445:445 --init-ctr=once --volume allstor:/srv --name allstor-init allstor-init:latest; sudo docker pod ls
+sudo docker create --pod allstor --cpus 1 --memory 512M --volume allstor:/srv --name allstor-samba allstor-samba:latest; sudo docker pod ls
+sudo docker generate kube allstor > pod.yml; less pod.yml
+
+sudo docker pod start allstor; sudo docker ps -a
 sudo docker pod rm -f allstor; sudo docker volume rm allstor -f; sudo docker volume ls
 
 sudo docker play kube --build --replace pod.yml

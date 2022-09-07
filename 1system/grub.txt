@@ -1,0 +1,24 @@
+#----------------------------------------------------------------------------------------------
+#https://superuser.com/a/880265
+You can use GRUB's sleep command in grub.cfg like this:
+
+set default=0
+sleep --interruptible --verbose 60
+
+Here 60 [seconds] is a sleep's duration, --interruptible (-i) allows to break sleep by pressing escape key, --verbose (-v) displays remaining seconds during countdown.
+
+#----------------------------------------------------------------------------------------------
+#https://bugzilla.redhat.com/show_bug.cgi?id=1955901#c2
+#Bug 1955901 - loadenv.c:216:sparse file not allowed on boot with btrfs /boot 
+This isn't a default configuration. It's one of the reasons /boot is still on ext4 by default.
+
+GRUB preboot writes to grubenv by just overwriting the two blocks making up the file, without updating any Btrfs metadata because the GRUB btrfs.mod driver is read-only. Just like all of its file system drivers. On ext4 this isn't a problem because, no data checksums or inline extents yet. Btrfs (and ZFS) will see such overwrites as corruption, therefore GRUB disallows writes to grubenv when it's on Btrfs, ZFS, mdadm raid, LUKS, and possibly LVM.
+
+Upstream needs to redesign grubenv is what it comes down to.
+
+There's several different ways grubenv could be allocated that might explain why you're not seeing the error in Fedora 33 but you are in Fedora 34. But when the error happens, it's legit, it's not a bug. It's a design issue.
+
+As a consequence of putting grubenv on Btrfs, GRUB can't zero out boot_success, so it always thinks boots succeeded. Therefore the GRUB menu is always hidden even following a failed boot. The foreseeable future means grubenv on ext4, or you can F8, Esc, or Tab (not sure which one) to reveal the hidden GRUB menu, or you can disable the hidden grub menu feature with 
+
+sudo grub2-editenv - unset menu_auto_hide
+
