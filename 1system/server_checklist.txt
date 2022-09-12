@@ -1,7 +1,7 @@
 hardware
 bios
-ipkvm
-installation
+ipkvm (ilo vsp?)
+installation (parted boot label?)
 
 update && reboot
   yum -y update
@@ -9,6 +9,8 @@ update && reboot
   yum -y install dnf-plugin-system-upgrade
   sudo dnf system-upgrade download --releasever=35
   dnf system-upgrade reboot
+
+  remove useless rhel kernel?
 
 accounts + ssh(passwords and keys)
 network
@@ -28,9 +30,8 @@ locale
   localectl set-locale LANG="ru_RU.UTF-8"
   localectl set-locale LC_MESSAGES="en_US.UTF-8"
   localectl
-ssh
 
-raid/storage
+raid/storage (meta raidc4?, data?)
 
 ssd trim
   grep ssd /proc/mounts

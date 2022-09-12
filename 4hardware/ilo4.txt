@@ -32,8 +32,14 @@ Host ilo
         Ciphers +aes128-cbc
 ...
 
+vsp "esc + shift + ("
+power on
+power off
+power reset
+
 #---------------------------------------------------------------------------------------
 Configurig GRUB on host
+# https://access.redhat.com/solutions/28555
 /etc/default/grub 
 ...
 GRUB_TERMINAL_OUTPUT="console serial"

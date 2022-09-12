@@ -4,11 +4,18 @@
 
 yum group list --hidden -v
 
+#FEDORA DESKTOP
 sudo yum -y install @virtualization
 sudo usermod -aG libvirt zorg
 sudo systemctl enable libvirtd --now
 
 mkdir -p ~/.config/libvirt/ && echo 'uri_default = "qemu:///system"' > ~/.config/libvirt/libvirt.conf
+
+#ORACLE LINUX SERVER
+
+yum -y install qemu-kvm libvirt virt-install nc virt-top
+for drv in qemu network nodedev nwfilter secret storage interface; do systemctl start virt${drv}d{,-ro,-admin}.socket; done
+virt-host-validate
 
 #---------------------------------------------------------------------------------------------------------------
 N=local-zorg
@@ -28,6 +35,22 @@ pacman -Syy && pacman -S --noconfirm xterm && eval $(/usr/bin/resize) && mc
 #virt-customize -a /var/lib/libvirt/images/imagetest1.qcow2 --hostname vm01.test.lab --root-password password:rootpw --ssh-inject 'root:file:labkey.pub' --uninstall cloud-init --selinux-relabel
 #virsh net-update vagrant-libvirt add dns-host '<host ip="192.168.11.11"> <hostname>blah2.laine.org</hostname> </host>' --live --config
 
+#---------------------------------------------------------------------------------------------------------------
+# AUTO WITH SERIAL
+virt-install -n OL9 --osinfo ol9.0 --boot uefi \
+--vcpus 8 --ram 4096 --video none --graphics none --disk path=/var/lib/libvirt/images/OL9.qcow2,size=16 -w network=default \
+--location OracleLinux-R9-U0-x86_64-boot-uek.iso,kernel=images/pxeboot/vmlinuz,initrd=/images/pxeboot/initrd.img \
+--extra-args "inst.stage2=hd:LABEL=OL-9-0-0-BaseOS-x86_64 inst.ks=https://raw.githubusercontent.com/zimmnik/provisioner/master/kickstart/ol9a.cfg console=ttyS0 inst.text"
+#To exit a virsh console session, type CTRL + Shift followed by ]
+
+# VIA GUI, MANUAL PARTITIONING
+virt-install -n OL9 --osinfo ol9.0 --boot uefi \
+--vcpus 8 --ram 4096 --disk path=/var/lib/libvirt/images/OL9.qcow2,size=16 -w network=default \
+--location OracleLinux-R9-U0-x86_64-boot-uek.iso,kernel=images/pxeboot/vmlinuz,initrd=/images/pxeboot/initrd.img \
+--extra-args "inst.stage2=hd:LABEL=OL-9-0-0-BaseOS-x86_64 quiet inst.ks=https://raw.githubusercontent.com/zimmnik/provisioner/master/kickstart/ol9.cfg"
+
+# STOP and REMOVE VM
+virsh destroy OL9; virsh list --all; virsh undefine OL9 --nvram --storage vda; virsh list --all; virsh vol-list default
 #---------------------------------------------------------------------------------------------------------------
 mkdir wrtlab && cd wrtlab 
 
@@ -66,5 +89,3 @@ virt-install -n sysrescd --osinfo linux2020 --install no_install=yes  \
 # tab, after esc for repaint menu
 # choose menu item with up\down key, tab key for edit boot options, add kernel arg: console=ttyS0, enter for run
 pacman -Syy && pacman -S --noconfirm xterm && eval $(/usr/bin/resize) && mc
-
-virt-install -n OL9 --osinfo ol8.5 --boot uefi --vcpus 8 --ram 4096 --disk size=16 -w network=default --location OracleLinux-R9-U0-x86_64-boot-uek.iso,kernel=images/pxeboot/vmlinuz,initrd=/images/pxeboot/initrd.img --extra-args "inst.stage2=hd:LABEL=OL-9-0-0-BaseOS-x86_64 quiet inst.ks=https://raw.githubusercontent.com/zimmnik/provisioner/master/kickstart/customO.cfg"
