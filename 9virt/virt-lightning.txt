@@ -1,0 +1,19 @@
+#https://github.com/virt-lightning/virt-lightning
+sudo yum -y install python3-devel libvirt-devel gcc python3-urwid
+python3 -m venv --upgrade-deps .py-env && source .py-env/bin/activate
+pip3 install virt-lightning python3-urwid
+curl https://virt-lightning.org/images/
+vl fetch fedora-36
+vl distro_list
+vl distro_list > virt-lightning.yaml
+vl up
+vl status
+vl ssh
+vl ssh
+vl down
+virsh list
+virsh net-list 
+virsh pool-destroy virt-lightning; virsh pool-list 
+virsh pool-undefine virt-lightning; virsh pool-list
+sudo rm -rf /var/lib/virt-lightning/; ls /var/lib/
+
