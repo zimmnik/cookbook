@@ -3,14 +3,19 @@
 
 BOOT TO EFI MODE
 
+DISK_MAIN="/dev/nvme0n1"
+DISK_EFI="/dev/nvme0n1p1"
+DISK_BOOT="/dev/nvme0n1p2"
+DISK_ROOT="/dev/nvme0n1p3"
+
 mount -t cifs //192.168.4.83/backup /mnt/backup -o username=zorg
 cd /mnt/backup/probook/system/latest/ && ls -alh
 
 lsblk -o +label,fstype,uuid
 btrfs filesystem show
-wipefs -ab /dev/vda
+wipefs -ab ${DISK_MAIN}
 
-parted /dev/vda \
+parted ${DISK_MAIN} \
   mklabel gpt \
   mkpart "'EFI System Partition'" 0% 256M \
   set 1 boot on \
@@ -21,18 +26,18 @@ parted /dev/vda \
 cryptsetup benchmark
 grep dm_crypt /proc/modules
 
-cryptsetup open --cipher aes-xts-plain64 --type plain -d /dev/urandom /dev/vda3 to_be_wiped
+cryptsetup open --cipher aes-xts-plain64 --type plain -d /dev/urandom ${DISK_ROOT} to_be_wiped
 cryptsetup status /dev/mapper/to_be_wiped && dmsetup ls --target crypt
 time dd if=/dev/zero of=/dev/mapper/to_be_wiped status=progress
 cryptsetup close to_be_wiped && dmsetup ls --target crypt
 
-cryptsetup luksFormat /dev/vda3
-cryptsetup open /dev/vda3 "luks-$(cryptsetup luksUUID /dev/vda3)"
+cryptsetup luksFormat ${DISK_ROOT}
+cryptsetup open ${DISK_ROOT} "luks-$(cryptsetup luksUUID ${DISK_ROOT})"
 dmsetup ls --target crypt
 
-mkfs.btrfs -L probook -m dup -d single "/dev/mapper/luks-$(cryptsetup luksUUID /dev/vda3)"
+mkfs.btrfs -L probook -m dup -d single "/dev/mapper/luks-$(cryptsetup luksUUID ${DISK_ROOT})"
 mkdir /mnt/restore
-mount -o compress=zstd:1 "/dev/mapper/luks-$(cryptsetup luksUUID /dev/vda3)" /mnt/restore/
+mount -o compress=zstd:1 "/dev/mapper/luks-$(cryptsetup luksUUID ${DISK_ROOT})" /mnt/restore/
 btrfs su list -t /mnt/restore/
 gpg -d --quiet --pinentry-mode loopback -o - root-2022-05-30-2054665304.btrfs.zst.gpg | zstdmt -d | btrfs receive -v /mnt/restore/
 btrfs su list -t /mnt/restore/
@@ -40,14 +45,14 @@ btrfs su snapshot /mnt/restore/latest_weekend/ /mnt/restore/root
 btrfs su delete /mnt/restore/latest_weekend/
 btrfs su list -t /mnt/restore 
 umount /mnt/restore
-mount -o compress=zstd:1,subvol=root "/dev/mapper/luks-$(cryptsetup luksUUID /dev/vda3)" /mnt/restore/
+mount -o compress=zstd:1,subvol=root "/dev/mapper/luks-$(cryptsetup luksUUID ${DISK_ROOT})" /mnt/restore/
 
-mkfs.ext4 /dev/vda2
-mount /dev/vda2 /mnt/restore/boot/
+mkfs.ext4 ${DISK_BOOT}
+mount ${DISK_BOOT} /mnt/restore/boot/
 gpg -d --pinentry-mode loopback -o - boot-2022-05-30-2054665304.tar.zst.gpg | zstdmt -d | tar -C /mnt/restore -xvf - 
 
-mkfs.vfat -F 32 /dev/vda1
-mount /dev/vda1 /mnt/restore/boot/efi/
+mkfs.vfat -F 32 ${DISK_EFI}
+mount ${DISK_EFI} /mnt/restore/boot/efi/
 gpg -d --pinentry-mode loopback -o - efi-2022-05-30-2054665304.tar.zst.gpg | zstdmt -d | tar -C /mnt/restore -xvf -
 
 modprobe efivarfs
@@ -59,7 +64,7 @@ dmsetup ls --target crypt
 vim /etc/default/grub
 grub2-mkconfig -o /boot/grub2/grub.cfg
 efibootmgr -v
-efibootmgr -c -w -L Fedora -d /dev/vda -p 1 -l \EFI\fedora\shimx64.efi
+efibootmgr -c -w -L Fedora -d ${DISK_MAIN} -p 1 -l \EFI\fedora\shimx64.efi
 efibootmgr -v
 
 #https://fedoraproject.org/wiki/GRUB_2#Instructions_for_UEFI-based_systems
