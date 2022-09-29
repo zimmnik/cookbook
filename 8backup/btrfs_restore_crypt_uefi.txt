@@ -50,6 +50,7 @@ gpg -d --pinentry-mode loopback -o - efi-2022-05-30-2054665304.tar.zst.gpg | zst
 
 modprobe efivarfs
 cp --remove-destination /etc/resolv.conf /mnt/restore/etc/
+for i in {dev,sys,proc}; do mount -o bind /$i /mnt/restore/$i; done
 chroot /mnt/restore/ /bin/bash
 vim /etc/default/grub
 grub2-mkconfig -o /boot/grub2/grub.cfg
