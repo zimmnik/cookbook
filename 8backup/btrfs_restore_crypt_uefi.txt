@@ -1,6 +1,8 @@
 #systemd.unit=multi-user.target console=ttyS0
 #yum -y install xterm && eval $(resize)
 
+BOOT TO EFI MODE
+
 mount -t cifs //192.168.4.83/backup /mnt/backup -o username=zorg
 cd /mnt/backup/probook/system/latest/ && ls -alh
 
