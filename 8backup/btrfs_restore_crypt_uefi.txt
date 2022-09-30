@@ -58,8 +58,12 @@ gpg -d --pinentry-mode loopback -o - efi-2022-05-30-2054665304.tar.zst.gpg | zst
 cp --remove-destination /etc/resolv.conf /mnt/restore/etc/
 for i in {dev,sys,proc}; do mount -o bind /$i /mnt/restore/$i; done
 chroot /mnt/restore/ /bin/bash
+
 touch /.autorelabel
-sudo rm /etc/ssh/ssh_host_*
+rm -v /etc/ssh/ssh_host_*
+echo > /etc/machine-id
+ls /dev/disk/by-id/
+vim /etc/smartmontools/smartd.conf
 
 dmsetup ls --target crypt
 lsblk -f
@@ -72,7 +76,6 @@ vim /etc/fstab
 rm /boot/efi/EFI/fedora/grub.cfg
 rm /boot/grub2/grub.cfg
 yum -y install shim-* grub2-efi-* grub2-common
-
 
 #https://fedoraproject.org/wiki/GRUB_2#Instructions_for_UEFI-based_systems
 #https://bugzilla.redhat.com/show_bug.cgi?id=1917213
