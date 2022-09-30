@@ -1,0 +1,2 @@
+tar --selinux --one-file-system -cf - -C / etc | zstd -z --quiet - | gpg -c --pinentry-mode loopback --compress-algo none -o "etc.tar.zst.gpg"
+gpg -d --pinentry-mode loopback -o - etc.tar.zst.gpg | zstdmt -d | tar -C /srv/temp -xvf -
