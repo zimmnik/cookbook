@@ -62,17 +62,18 @@ chroot /mnt/restore/ /bin/bash
 touch /.autorelabel
 rm -v /etc/ssh/ssh_host_*
 echo > /etc/machine-id
+hostnamectl set-hostname NEWNAME && hostnamectl
+btrfs fi label / NEWNAME && btrfs fi show
+
 ls /dev/disk/by-id/
 vim /etc/smartmontools/smartd.conf
-vim /usr/local/bin/backupdate.sh
 
 dmsetup ls --target crypt
 lsblk -f
+vim /etc/fstab
 vim /etc/crypttab
 vim /etc/default/grub
-
-lsblk -f
-vim /etc/fstab
+vim /usr/local/bin/backupdate.sh
 
 rm /boot/efi/EFI/fedora/grub.cfg
 rm /boot/grub2/grub.cfg
