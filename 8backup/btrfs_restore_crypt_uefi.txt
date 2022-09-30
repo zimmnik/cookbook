@@ -64,6 +64,7 @@ rm -v /etc/ssh/ssh_host_*
 echo > /etc/machine-id
 ls /dev/disk/by-id/
 vim /etc/smartmontools/smartd.conf
+vim /usr/local/bin/backupdate.sh
 
 dmsetup ls --target crypt
 lsblk -f
