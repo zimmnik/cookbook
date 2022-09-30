@@ -55,17 +55,19 @@ mkfs.vfat -F 32 ${DISK_EFI}
 mount ${DISK_EFI} /mnt/restore/boot/efi/
 gpg -d --pinentry-mode loopback -o - efi-2022-05-30-2054665304.tar.zst.gpg | zstdmt -d | tar -C /mnt/restore -xvf -
 
-modprobe efivarfs
-efibootmgr -v
 cp --remove-destination /etc/resolv.conf /mnt/restore/etc/
 for i in {dev,sys,proc}; do mount -o bind /$i /mnt/restore/$i; done
 chroot /mnt/restore/ /bin/bash
+touch /.autorelabel
 dmsetup ls --target crypt
 vim /etc/default/grub
-grub2-mkconfig -o /boot/grub2/grub.cfg
-efibootmgr -v
-efibootmgr -c -w -L Fedora -d ${DISK_MAIN} -p 1 -l \EFI\fedora\shimx64.efi
-efibootmgr -v
+
+lsblk -f
+vim /etc/fstab
+
+rm /boot/efi/EFI/fedora/grub.cfg
+rm /boot/grub2/grub.cfg
+yum -y install shim-* grub2-efi-* grub2-common
 
 #https://fedoraproject.org/wiki/GRUB_2#Instructions_for_UEFI-based_systems
 #https://bugzilla.redhat.com/show_bug.cgi?id=1917213
