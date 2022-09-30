@@ -60,6 +60,8 @@ for i in {dev,sys,proc}; do mount -o bind /$i /mnt/restore/$i; done
 chroot /mnt/restore/ /bin/bash
 touch /.autorelabel
 dmsetup ls --target crypt
+lsblk -f
+vim /etc/crypttab
 vim /etc/default/grub
 
 lsblk -f
