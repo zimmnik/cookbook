@@ -61,6 +61,8 @@ cp --remove-destination /etc/resolv.conf /mnt/restore/etc/
 for i in {dev,sys,proc}; do mount -o bind /$i /mnt/restore/$i; done
 chroot /mnt/restore/ /bin/bash
 dmsetup ls --target crypt
+lsblk -f
+vim /etc/crypttab
 vim /etc/default/grub
 grub2-mkconfig -o /boot/grub2/grub.cfg
 efibootmgr -v
