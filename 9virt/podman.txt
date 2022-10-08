@@ -27,8 +27,16 @@ CMD ["/usr/sbin/init"]
 
 ########################################################################
 #CNI MACVLAN
-yum -y install containernetworking-plugins
-sudo systemctl --now enable cni-dhcp
+sudo yum -y install containernetworking-plugins
+
+#OL9 FIX
+cat << EOF | sudo tee -a /etc/systemd/system/cni-dhcp.service.d/override.conf
+[Service]
+ExecStart=
+ExecStart=/usr/libexec/cni/dhcp daemon
+EOF
+
+sudo systemctl --now enable cni-dhcp; sudo systemctl status cni-dhcp
 cat << EOF | sudo tee -a /etc/containers/containers.conf
 [network]
 network_backend = "cni"
