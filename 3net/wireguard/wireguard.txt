@@ -1,29 +1,50 @@
 # https://blogs.gnome.org/thaller/2019/03/15/wireguard-in-networkmanager/
 # https://developer.gnome.org/NetworkManager/stable/nm-settings.html
 
-#Fedora34
-yum -y install wireguard-tools traceroute
-wg genkey | tee /dev/tty | wg pubkey
+# wg genkey | tee /dev/tty | wg pubkey (ON ROUTER!)
 
-#router wg interface setup and reboot
+#!/bin/bash
+set -o pipefail
+set -o errexit
+set -o nounset
+set -o xtrace
 
-nmcli connection add type wireguard con-name vpsvpn ifname wg0 \
-connection.autoconnect no \
-ipv6.method disabled ipv4.method manual ipv4.addresses 192.168.88.253/32 \
-ipv4.dns "192.168.88.254" ipv4.dns-priority -50 \
-wireguard.private-key "zUHaNRpdy/cJU8juzmHlIbcL7pZOuLn33MVmDJy1UBg="
-cat << 'EOF' | sudo tee -a /etc/NetworkManager/system-connections/vpsvpn.nmconnection
+export VPN_NAME=blablavpn
+export VPN_IP="192.168.6.252/32"
+export VPN_DNS="192.168.6.254"
+export VPN_ENDPOINT="1.1.1.1:1111"
+export VPN_TARGET="0.0.0.0/0"
+export VPN_IF="wg2"
+export VPN_PKEY="gIjQHYOQf582e4U6rJUO10DRbmVqAWleeAmQpL0qW2A="
+export VPN_SPKEY="lCR8hInAVzYiefQTVZ9eZ93o2prOj4ySTdytPz7uekc="
 
-[wireguard-peer.hkz1yY3FvAclZtP45C1wyQUS2gUqWVZIIduebVcrCH4=]
-endpoint=10.64.0.1:5151
+sudo yum -y install traceroute wireguard-tools
+
+nmcli connection down ${VPN_NAME} || true
+nmcli connection delete ${VPN_NAME} || true
+
+nmcli connection add type wireguard \
+  con-name "${VPN_NAME}" \
+  ifname "${VPN_IF}" \
+  connection.autoconnect no \
+  ipv6.method disabled \
+  ipv4.method manual \
+  ipv4.addresses "${VPN_IP}" \
+  ipv4.dns "${VPN_DNS}" \
+  ipv4.dns-priority -100 \
+  wireguard.private-key "${VPN_PKEY}"
+
+cat << EOF | sudo tee -a "/etc/NetworkManager/system-connections/${VPN_NAME}.nmconnection"
+
+[wireguard-peer.${VPN_SPKEY}]
+endpoint=${VPN_ENDPOINT}
 persistent-keepalive=25
-allowed-ips=0.0.0.0/0;
+allowed-ips=${VPN_TARGET};
 EOF
-sudo nmcli connection load /etc/NetworkManager/system-connections/VPN.nmconnection 
-nmcli connection up vpsvpn
 
-echo -e 'alias yy="nmcli connection up vpsvpn"\nalias nn="nmcli connection down vpsvpn"' >> ~/.bashrc
-
-traceroute google.com; resolvectl query google.com
+sudo nmcli connection load "/etc/NetworkManager/system-connections/${VPN_NAME}.nmconnection" && nmcli c up "${VPN_NAME}"
+sleep 3
+sudo wg && traceroute ya.ru && resolvectl query ya.ru
 
 #echo module wireguard +p > /sys/kernel/debug/dynamic_debug/control
+#echo -e 'alias yy="nmcli connection up vpsvpn"\nalias nn="nmcli connection down vpsvpn"' >> ~/.bashrc
