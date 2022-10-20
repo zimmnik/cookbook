@@ -1,0 +1,26 @@
+# https://github.com/hirschmann/nbfc/wiki/First-steps#linux
+# https://github.com/hirschmann/nbfc/wiki/How-to-build-NBFC#build-on-linux-via-docker
+
+# Build
+git clone https://github.com/hirschmann/nbfc.git nbfc
+docker run -it --rm -v $(pwd)/nbfc:/nbfc mono:latest bash
+tree nbfc/Linux/bin/Release/ | less
+
+# Deploy binaries
+sudo yum install mono-extras
+sudo mkdir /opt/nbfc/
+sudo cp -rv nbfc/Linux/bin/Release/* /opt/nbfc/
+
+# Config
+cd /opt/nbfc/
+mono nbfc.exe config --apply "HP ProBook 440 G3"
+mono nbfc.exe status --all
+
+# Deploy systemd
+sudo cp -v nbfc/Linux/nbfc.service /etc/systemd/system/
+sudo cp -v nbfc/Linux/nbfc-sleep.service /etc/systemd/system/
+sudo systemctl enable nbfc --now && journalctl -u nbfc -f
+
+# Check status
+sudo systemctl status nbfc
+mono nbfc.exe status --all
