@@ -3,16 +3,14 @@
 
 BOOT TO EFI MODE
 
+lsblk -o +label,fstype,uuid
+btrfs filesystem show
+
 DISK_MAIN="/dev/nvme0n1"
 DISK_EFI="/dev/nvme0n1p1"
 DISK_BOOT="/dev/nvme0n1p2"
 DISK_ROOT="/dev/nvme0n1p3"
 
-mount -t cifs //192.168.4.83/backup /mnt/backup -o username=zorg
-cd /mnt/backup/probook/system/latest/ && ls -alh
-
-lsblk -o +label,fstype,uuid
-btrfs filesystem show
 wipefs -ab ${DISK_MAIN}
 
 parted ${DISK_MAIN} \
@@ -34,6 +32,9 @@ cryptsetup close to_be_wiped && dmsetup ls --target crypt
 cryptsetup luksFormat ${DISK_ROOT}
 cryptsetup open ${DISK_ROOT} "luks-$(cryptsetup luksUUID ${DISK_ROOT})"
 dmsetup ls --target crypt
+
+mount -t cifs //192.168.4.83/backup /mnt/backup -o username=zorg
+cd /mnt/backup/probook/system/latest/ && ls -alh
 
 mkfs.btrfs -L probook -m dup -d single "/dev/mapper/luks-$(cryptsetup luksUUID ${DISK_ROOT})"
 mkdir /mnt/restore

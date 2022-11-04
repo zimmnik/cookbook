@@ -1,13 +1,15 @@
 # https://github.com/hirschmann/nbfc/wiki/First-steps#linux
 # https://github.com/hirschmann/nbfc/wiki/How-to-build-NBFC#build-on-linux-via-docker
 
+# Dependencies
+sudo yum install git podman-docker mono-extras
+
 # Build
 git clone https://github.com/hirschmann/nbfc.git nbfc
-docker run -it --rm -v $(pwd)/nbfc:/nbfc mono:latest bash
+docker run -it --rm -v $(pwd)/nbfc:/nbfc:Z mono:latest bash -c "cd /nbfc && ./build.sh"
 tree nbfc/Linux/bin/Release/ | less
 
 # Deploy binaries
-sudo yum install mono-extras
 sudo mkdir /opt/nbfc/
 sudo cp -rv nbfc/Linux/bin/Release/* /opt/nbfc/
 
