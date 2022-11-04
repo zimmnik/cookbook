@@ -75,6 +75,7 @@ vim /etc/default/grub
 vim /usr/local/bin/backupdate.sh
 
 \rm -v /boot/efi/EFI/fedora/grub.cfg && \rm -v /boot/grub2/grub.cfg
+yum -y upgrade shim-* grub2-efi-* grub2-common
 yum -y reinstall shim-* grub2-efi-* grub2-common
 
 #https://fedoraproject.org/wiki/GRUB_2#Instructions_for_UEFI-based_systems
