@@ -11,7 +11,7 @@ DISK_EFI="/dev/nvme0n1p1"
 DISK_BOOT="/dev/nvme0n1p2"
 DISK_ROOT="/dev/nvme0n1p3"
 
-wipefs -ab ${DISK_MAIN}
+wipefs -ab ${DISK_MAIN} && lsblk -f
 
 parted ${DISK_MAIN} \
   mklabel gpt \
@@ -21,9 +21,10 @@ parted ${DISK_MAIN} \
   mkpart SYSTEM 768M 100% \
   print free
 
-cryptsetup benchmark
 grep dm_crypt /proc/modules
+cryptsetup benchmark
 
+# slow and optional
 cryptsetup open --cipher aes-xts-plain64 --type plain -d /dev/urandom ${DISK_ROOT} to_be_wiped
 cryptsetup status /dev/mapper/to_be_wiped && dmsetup ls --target crypt
 time dd if=/dev/zero of=/dev/mapper/to_be_wiped status=progress
@@ -40,23 +41,19 @@ mkfs.btrfs -L probook -m dup -d single "/dev/mapper/luks-$(cryptsetup luksUUID $
 mkdir /mnt/restore
 mount -o compress=zstd:1 "/dev/mapper/luks-$(cryptsetup luksUUID ${DISK_ROOT})" /mnt/restore/
 btrfs su list -t /mnt/restore/
-gpg -d --quiet --pinentry-mode loopback -o - root-2022-05-30-2054665304.btrfs.zst.gpg | zstdmt -d | btrfs receive -v /mnt/restore/
-btrfs su list -t /mnt/restore/
-btrfs su snapshot /mnt/restore/latest_weekend/ /mnt/restore/root
-btrfs su delete /mnt/restore/latest_weekend/
-btrfs su list -t /mnt/restore 
+gpg -d --quiet --pinentry-mode loopback -o - root-2022-05-30-2054665304.btrfs.zst.gpg | zstdmt -d | btrfs receive -v /mnt/restore/ && btrfs su list -t /mnt/restore/
+btrfs su snapshot /mnt/restore/latest_weekend/ /mnt/restore/root && btrfs su list -t /mnt/restore 
+btrfs su delete /mnt/restore/latest_weekend/ && btrfs su list -t /mnt/restore 
 umount /mnt/restore
 mount -o compress=zstd:1,subvol=root "/dev/mapper/luks-$(cryptsetup luksUUID ${DISK_ROOT})" /mnt/restore/
 
-mkfs.ext4 ${DISK_BOOT}
-mount ${DISK_BOOT} /mnt/restore/boot/
+mkfs.ext4 ${DISK_BOOT} && mount ${DISK_BOOT} /mnt/restore/boot/
 gpg -d --pinentry-mode loopback -o - boot-2022-05-30-2054665304.tar.zst.gpg | zstdmt -d | tar -C /mnt/restore -xvf - 
 
-mkfs.vfat -F 32 ${DISK_EFI}
-mount ${DISK_EFI} /mnt/restore/boot/efi/
+mkfs.vfat -F 32 ${DISK_EFI} && mount ${DISK_EFI} /mnt/restore/boot/efi/
 gpg -d --pinentry-mode loopback -o - efi-2022-05-30-2054665304.tar.zst.gpg | zstdmt -d | tar -C /mnt/restore -xvf -
 
-cp --remove-destination /etc/resolv.conf /mnt/restore/etc/
+\cp --remove-destination /etc/resolv.conf /mnt/restore/etc/
 for i in {dev,sys,proc}; do mount -o bind /$i /mnt/restore/$i; done
 chroot /mnt/restore/ /bin/bash
 
@@ -69,16 +66,16 @@ btrfs fi label / NEWNAME && btrfs fi show
 ls /dev/disk/by-id/
 vim /etc/smartmontools/smartd.conf
 
+cat partition_layout-*.txt
 dmsetup ls --target crypt
-lsblk -f
+blkid
 vim /etc/fstab
 vim /etc/crypttab
 vim /etc/default/grub
 vim /usr/local/bin/backupdate.sh
 
-rm /boot/efi/EFI/fedora/grub.cfg
-rm /boot/grub2/grub.cfg
-yum -y install shim-* grub2-efi-* grub2-common
+\rm -v /boot/efi/EFI/fedora/grub.cfg && \rm -v /boot/grub2/grub.cfg
+yum -y reinstall shim-* grub2-efi-* grub2-common
 
 #https://fedoraproject.org/wiki/GRUB_2#Instructions_for_UEFI-based_systems
 #https://bugzilla.redhat.com/show_bug.cgi?id=1917213
