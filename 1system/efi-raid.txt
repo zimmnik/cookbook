@@ -1,0 +1,27 @@
+DISK1="/dev/disk/by-id/nvme-NE-1TB_9120422602472"
+DISK2="/dev/disk/by-id/ata-NT-1TB_0022740000053"
+
+mdadm --stop /dev/md0
+mdadm --zero-superblock ${DISK1}-part1 ${DISK2}-part1
+wipefs -ab ${DISK1} && wipefs -ab ${DISK2} && lsblk -f
+
+parted ${DISK1} \
+  mklabel gpt \
+  mkpart "'EFI System Partition'" 0% 256M \
+  set 1 raid on \
+  mkpart BOOT 256M 768M \
+  set 2 raid on \
+  print free
+  
+parted ${DISK2} \
+  mklabel gpt \
+  mkpart "'EFI System Partition'" 0% 256M \
+  set 1 raid on \
+  mkpart BOOT 256M 768M \
+  set 2 raid on \
+  print free
+
+sleep 2
+  
+mdadm --create /dev/md0 --homehost=any --name=EFI --metadata=1.0 --level=1 --raid-disks=2 ${DISK1}-part1 ${DISK2}-part1 && mdadm --detail /dev/md0
+mdadm --create /dev/md1 --homehost=any --name=BOOT --metadata=1.0 --level=1 --raid-disks=2 ${DISK1}-part2 ${DISK2}-part2 && mdadm --detail /dev/md1
