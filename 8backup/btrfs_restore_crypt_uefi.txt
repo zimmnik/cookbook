@@ -60,23 +60,36 @@ chroot /mnt/restore/ /bin/bash
 touch /.autorelabel
 \rm -v /etc/ssh/ssh_host_*
 echo > /etc/machine-id
-hostnamectl set-hostname NEWNAME && hostnamectl
 btrfs fi label / NEWNAME && btrfs fi show
 
-ls /dev/disk/by-id/
-vim /etc/smartmontools/smartd.conf
+mv /etc/X11/xorg.conf.d/20-amdgpu.conf /etc/X11/xorg.conf.d/20-amdgpu.conf.disabled
 
+ls /dev/disk/by-id/
 cat partition_layout-*.txt
 dmsetup ls --target crypt
 blkid
 vim /etc/fstab
-vim /etc/crypttab
-vim /etc/default/grub
-vim /usr/local/bin/backupdate.sh
 
+vim /etc/crypttab
+dracut --regenerate-all --force
+
+https://mirrors.edge.kernel.org/pub/linux/utils/boot/dracut/dracut.html#_crypto_luks
+vim /etc/default/grub
+
+#https://fedoraproject.org/wiki/GRUB_2#Instructions_for_UEFI-based_systems
+#https://bugzilla.redhat.com/show_bug.cgi?id=1917213
 \rm -v /boot/efi/EFI/fedora/grub.cfg && \rm -v /boot/grub2/grub.cfg
 yum -y upgrade shim-* grub2-efi-* grub2-common
 yum -y reinstall shim-* grub2-efi-* grub2-common
 
-#https://fedoraproject.org/wiki/GRUB_2#Instructions_for_UEFI-based_systems
-#https://bugzilla.redhat.com/show_bug.cgi?id=1917213
+umount /mnt/backup
+#UNPLUG  
+
+reboot
+
+vim /usr/local/bin/backupdate.sh
+vim /etc/smartmontools/smartd.conf
+hostnamectl set-hostname NEWNAME && hostnamectl
+
+#dracut -v --no-hostonly -a "rescue" /boot/initramfs-0-rescue-0b5b35daa76047c89106db491de70957.img $(uname -r)
+#https://askbot.fedoraproject.org/en/question/40409/cant-boot-into-rescue-mode-how-to-re-generate-initramfs/
