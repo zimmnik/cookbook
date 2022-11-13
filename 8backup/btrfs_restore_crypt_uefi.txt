@@ -91,5 +91,5 @@ vim /usr/local/bin/backupdate.sh
 vim /etc/smartmontools/smartd.conf
 hostnamectl set-hostname NEWNAME && hostnamectl
 
-#dracut -v --no-hostonly -a "rescue" /boot/initramfs-0-rescue-0b5b35daa76047c89106db491de70957.img $(uname -r)
+#dracut -v --no-hostonly -a "rescue" --force /boot/initramfs-0-rescue-0b5b35daa76047c89106db491de70957.img $(uname -r)
 #https://askbot.fedoraproject.org/en/question/40409/cant-boot-into-rescue-mode-how-to-re-generate-initramfs/
