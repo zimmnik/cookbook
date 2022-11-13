@@ -1,4 +1,4 @@
-#systemd.unit=multi-user.target console=ttyS0
+#systemd.unit=multi-user.target console=ttyS0 selinux=0
 #yum -y install xterm && eval $(resize)
 
 BOOT TO EFI MODE
