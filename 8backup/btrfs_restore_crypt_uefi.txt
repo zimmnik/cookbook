@@ -58,7 +58,7 @@ for i in {dev,sys,proc}; do mount -o bind /$i /mnt/restore/$i; done
 chroot /mnt/restore/ /bin/bash
 
 touch /.autorelabel
-rm -v /etc/ssh/ssh_host_*
+\rm -v /etc/ssh/ssh_host_*
 echo > /etc/machine-id
 hostnamectl set-hostname NEWNAME && hostnamectl
 btrfs fi label / NEWNAME && btrfs fi show
