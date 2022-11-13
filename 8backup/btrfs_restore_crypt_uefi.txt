@@ -91,7 +91,9 @@ reboot
 
 vim /usr/local/bin/backupdate.sh
 btrfs subvolume create /.sv/previous_nightly
+btrfs subvolume create /.sv/latest_nightly
 btrfs subvolume create /.sv/previous_weekend
+btrfs subvolume create /.sv/latest_weekend
 
 vim /etc/smartmontools/smartd.conf
 hostnamectl set-hostname NEWNAME && hostnamectl
