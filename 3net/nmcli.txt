@@ -9,3 +9,5 @@ nmcli connection up vlan4
 nmcli c add type vlan con-name DMZ dev eno2 id 3 ipv4.method disabled ipv6.method disabled 
 
 nmcli connection modify meta connection.zone trusted
+
+nmcli connection add con-name upstream ifname br0 type bridge ipv6.method disabled ipv4.method manual ipv4.addresses 192.168.7.250/24 ipv4.gateway 192.168.7.254 ipv4.dns 192.168.7.254
