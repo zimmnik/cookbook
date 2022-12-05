@@ -7,3 +7,19 @@ ExecStart=-/sbin/agetty --autologin root --noclear %I $TERM
 EOF
 
 systemctl daemon reload
+
+#-------------------------------------------------------------------
+sudo mkdir /etc/systemd/system/serial-getty@ttyS0.service.d/
+
+cat << 'EOF' | sudo tee /etc/systemd/system/serial-getty@ttyS0.service.d/override.conf
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty -o '-p -- \\u' --autologin root --noclear --keep-baud 115200,57600,38400,9600 - $TERM
+EOF
+
+echo ttyS0 | sudo tee /etc/securetty
+
+vim  /etc/pam.d/login 
+#%PAM-1.0
+auth       sufficient   pam_securetty.so
+auth       substack     system-auth
