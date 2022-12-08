@@ -43,6 +43,12 @@ virt-install -n OL9 --osinfo ol9.0 --boot uefi \
 --extra-args "inst.stage2=hd:LABEL=OL-9-0-0-BaseOS-x86_64 inst.ks=https://raw.githubusercontent.com/zimmnik/provisioner/master/kickstart/ol9a.cfg console=ttyS0 inst.text"
 #To exit a virsh console session, type CTRL + Shift followed by ]
 
+virt-install -n f37 --osinfo fedora35 --boot uefi \
+--vcpus 2 --ram 1024 --video none --graphics none  --disk path=/var/lib/libvirt/images/f37.qcow2,size=8 \
+--location Fedora-Everything-netinst-x86_64-37-1.7.iso,kernel=/images/pxeboot/vmlinuz,initrd=/images/pxeboot/initrd.img \
+--extra-args "inst.stage2=hd:LABEL=Fedora-E-dvd-x86_64-37 inst.ks=https://raw.githubusercontent.com/zimmnik/provisioner/master/kickstart/f37a.cfg console=ttyS0" \
+--network type=direct,source_mode=bridge,source=enp4s0
+
 # VIA GUI, MANUAL PARTITIONING
 virt-install -n OL9 --osinfo ol9.0 --boot uefi \
 --vcpus 8 --ram 4096 --disk path=/var/lib/libvirt/images/OL9.qcow2,size=16 -w network=default \
