@@ -1,0 +1,12 @@
+flatpak remotes
+flatpak list
+flatpak install flathub info.smplayer.SMPlayer
+flatpak install flathub io.github.celluloid_player.Celluloid
+flatpak run --command=bash io.github.celluloid_player.Celluloid
+flatpak info io.github.celluloid_player.Celluloid
+flatpak list --app --columns=application,runtime
+flatpak list --app --app-runtime=org.freedesktop.Platform/x86_64/
+flatpak uninstall com.xnview.XnViewMP
+flatpak uninstall -y org.telegram.desktop
+flatpak uninstall --unused
+flatpak remote-ls | grep -i firefox
