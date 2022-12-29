@@ -12,6 +12,9 @@ helm repo update && helm search repo -l stable/external-dns | less
 helm show values influxdata/telegraf > values-orig.yaml
 helm search repo --regexp influxdata/* -l | less
  
+helm delete victoria-metrics-agent --wait -n terra-monitoring
+helm upgrade --install victoria-metrics-agent vm/victoria-metrics-agent -f /tmp/ansible_configs/vmagent/values.yml -n terra-monitoring
+
 helm install prometheus stable/prometheus --version 9.3.1 \
 --namespace logging  --set \
 server.ingress.enabled=true,\
