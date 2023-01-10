@@ -2,3 +2,15 @@ grep -R -l v1beta2 stolon/ | xargs sed -i 's/v1beta2/v1/g'
 sed -i 's%"ssl" nil%"ssl" "off"%g' stolon/templates/hooks/update-cluster-spec-job.yaml
 
 sed -i 's%http://download.example/pub/fedora/%http://mirror.dogado.de/fedora/%g' $(grep -ril 'baseurl' /etc/yum.repos.d/)
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+cat <<EOF >> main.yml
+---
+  - name: robotframework-lint
+    version: 1.1
+  - name: six
+    version: 1.11.0
+EOF
+
+cat main.yml | sed -nE '/- name:/ {N; s/\n//g; s/.*:\s([-a-zA-Z0-9\.]+).*:\s(.*)/\1==\2/g; p;}' | tee pip_requirements.txt && pip install -r pip_requirements.txt && ansible-galaxy install -r requirements.yml
+https://stackoverflow.com/a/12212566/7723601
