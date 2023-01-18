@@ -1,5 +1,6 @@
 k run -it debug --image=alpine --restart=Never --rm=true -- sh
 
+k run debug --image=nginx --overrides='{"spec":{"containers":[{"name":"debug","image":"nginx","resources":{"limits":{"cpu":"2000m","memory":"2Gi"},"requests":{"cpu":"1000m","memory":"1Gi"}}}]}}' --dry-run=client -o yaml | k apply -f -
 #-----------------------------------------------------------------------------------------------------------------------------
 k run -it debug --image=alpine --restart=Never --rm=true --overrides='{"spec":{"serviceAccountName":"api-ingress-sa"}}' -- sh
 apk add curl
