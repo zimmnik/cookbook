@@ -28,3 +28,22 @@ syntax			  term(StdOut)	term(StdErr)	file(StdOut)	file(StdErr)	existing file	non
 ----------------------------------------------------------------------------------------------------------------------------------
 2> /dev/null | tee -a	  yes		no		yes		no		append
 ----------------------------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------
+    # FYI https://www.gnu.org/software/bash/manual/html_node/Arrays.html
+    # FYI https://www.baeldung.com/linux/bash-array
+    declare -A label_default_values=(["local/division"]="unknown" ["local/direction"]="unknown" ["local/team"]="unknown")
+
+    for label in ${!label_default_values[@]}
+      do
+        # FYI https://tldp.org/LDP/abs/html/string-manipulation.html
+        ENV_VARIABLE_NAME_TAINTED=${label^^}
+        ENV_VARIABLE_NAME=${ENV_VARIABLE_NAME_TAINTED//[\/-]/_}
+
+        # FYI https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html
+        if [ -z "${!ENV_VARIABLE_NAME}" ]; then
+            warning_msg "${ENV_VARIABLE_NAME} variable is missing and will be mandatory soon."
+            export ${ENV_VARIABLE_NAME}=${label_default_values[$label]}
+            warning_msg "Added variable ${ENV_VARIABLE_NAME}=${!ENV_VARIABLE_NAME}"
+        fi
+      done
