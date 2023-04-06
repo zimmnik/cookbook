@@ -1,0 +1,1 @@
+curl -v --user 'login:password' --upload-file 'AlmaLinux-8.7-x86_64-dvd.iso' -X PUT "https://vsphere/folder/iso/AlmaLinux-8.7-x86_64-dvd.iso?dcPath=DEV+Datacenter&dsName=dbp_storage"
