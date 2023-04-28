@@ -86,7 +86,7 @@ git push -o ci.skip
 
 #------------------------------------------------------------------------------------
 # add submodule
-git submodule add git@github.com:gekmihesg/ansible-openwrt.git thirdparty/ansible-openwrt
+git submodule add -b mainline git@github.com:gekmihesg/ansible-openwrt.git thirdparty/ansible-openwrt
 # get submodule status
 git submodule status
 # Remove the submodule entry from .git/config
