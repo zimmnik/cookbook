@@ -1,0 +1,24 @@
+#/bin/bash
+
+#set -o xtrace
+set -o pipefail
+set -o nounset
+#set -o errexit
+
+export MSG=$(uuidgen)
+export TOPIC="check-devops"
+export SERVER="localhost:9092" 
+
+bin/kafka-metadata-quorum.sh --bootstrap-server ${SERVER} describe --status
+bin/kafka-metadata-quorum.sh --bootstrap-server ${SERVER} describe --replication
+
+bin/kafka-topics.sh --bootstrap-server ${SERVER}                  --list 
+bin/kafka-topics.sh --bootstrap-server ${SERVER} --topic ${TOPIC} --delete    2>/dev/null || true 
+bin/kafka-topics.sh --bootstrap-server ${SERVER} --topic ${TOPIC} --create   
+bin/kafka-topics.sh --bootstrap-server ${SERVER} --topic ${TOPIC} --describe 
+
+echo $MSG | bin/kafka-console-producer.sh --bootstrap-server ${SERVER} --topic ${TOPIC} 
+RESULT=   $(bin/kafka-console-consumer.sh --bootstrap-server ${SERVER} --topic ${TOPIC} --offset 0 --partition 0 --max-messages 1)
+if [[ ${MSG} != ${RESULT} ]]; then echo FAIL; else echo SUCCESS; fi
+
+bin/kafka-topics.sh --bootstrap-server ${SERVER} --topic ${TOPIC} --delete
