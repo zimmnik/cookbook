@@ -1,3 +1,21 @@
+#connect repo
+helm repo add bitnami https://charts.bitnami.com/bitnami && helm repo update
+helm search repo -l kafka | less
+
+# inspect namespace
+helm list
+k get pod,pvc
+
+#deploy
+time helm install pr22-kafka-demo bitnami/kafka --version 22.1.1 --wait -f values.yaml
+
+# test
+kubectl run pr22-kafka-demo-client --restart='Never' --image docker.io/bitnami/kafka:3.4.0-debian-11-r28 --command -- sleep infinity
+kubectl exec --tty -i pr22-kafka-demo-client -- bash -c "kafka-metadata-quorum.sh --bootstrap-server pr22-kafka-demo:9092 describe --replication"
+
+#clean
+#kubectl delete pod pr22-kafka-demo-client; helm uninstall pr22-kafka-demo --wait && k delete pvc --wait=true --all
+
 #/bin/bash
 
 #set -o xtrace
