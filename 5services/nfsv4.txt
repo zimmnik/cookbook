@@ -1,16 +1,14 @@
 #SERVER
 sudo yum install nfs-utils
-sudo sed -i '/RPCNFSDARGS/ s/""/"--no-nfs-version 2 --no-nfs-version 3 --no-udp"/' /etc/sysconfig/nfs
-sudo sed -i '/RPCMOUNTDOPTS/ s/""/"--no-nfs-version 2 --no-nfs-version 3"/' /etc/sysconfig/nfs
-sudo systemctl mask rpc-statd.service --now
-sudo systemctl mask rpcbind.service --now
-sudo systemctl mask rpcbind.socket --now
-sudo systemctl enable nfs.service
-sudo systemctl start nfs.service
+sudo sed -i 's/# vers3=y/vers3=n/g' /etc/nfs.conf
+sudo systemctl mask --now rpc-statd.service rpcbind.service rpcbind.socket
+sudo systemctl enable --now nfs-server
+
 sudo firewall-cmd --add-service=nfs --permanent
-sudo firewall-cmd --add-service=nfs
+sudo firewall-cmd --reload
+
 sudo mkdir /stor
-sudo chown nfsnobody:nfsnobody /stor
+sudo chown nobody:nobody /stor
 sudo sh -c "echo '/stor *(rw,async,all_squash)' >> /etc/exports"
 sudo exportfs -a
 
