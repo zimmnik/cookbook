@@ -1,0 +1,3 @@
+sftp -i ~/.ssh/id_rsa sftp://root@bakke:2000
+sudo yum install fuse-sshfs && \
+sshfs root@bakke:/ ~/temp -p 2000 -o IdentityFile=~/.ssh/id_rsa
