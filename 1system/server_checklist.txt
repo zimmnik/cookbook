@@ -31,6 +31,9 @@ locale
   localectl set-locale LC_MESSAGES="en_US.UTF-8"
   localectl
 
+power
+  nut
+
 raid/storage (meta raidc4?, data?)
 
 ssd trim
