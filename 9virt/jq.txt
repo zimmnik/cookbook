@@ -1,0 +1,2 @@
+# show namespaces without annotation scheduler.alpha.kubernetes.io/node-selector
+k get ns -o json | jq -r '.items[].metadata | select( .annotations | has("scheduler.alpha.kubernetes.io/node-selector") | not) | .name'
