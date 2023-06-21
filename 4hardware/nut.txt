@@ -1,3 +1,24 @@
+yum -y install nut usbutils
+udevadm control --reload-rules && udevadm trigger
+
+vim /etc/ups/ups.conf
+usbhid-ups -DDD -a APC |& less
+usbhid-ups -u nut -DDD -a APC |& less
+
+vim /etc/ups/upsd.users
+sed -i "/^MODE=/ s/=.*/=standalone/" nut.conf
+systemctl --now enable nut-server && journalctl -u nut-server -f
+
+yum install policycoreutils-python-utils audit
+ausearch -c 'upsd' --raw | audit2allow -M my-upsd
+semodule -X 300 -i my-upsd.pp
+
+systemctl restart nut-server && journalctl -f -u nut-server
+
+upscmd -u admin -p blahblah -l APC
+----------------------------------------------------------------------------------------------------------
+
+
 # INSTALLATION
 apt update && apt -y install nut
 udevadm control --reload-rules && udevadm trigger
