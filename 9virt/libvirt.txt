@@ -2,6 +2,9 @@
 #FYI https://serverfault.com/questions/1040692/tagged-vlan-on-kvm-with-macvtap-driver?noredirect=1&lq=1
 #FYI https://serverfault.com/questions/1051294/vlan-support-with-libvirt-for-linux-bridge-to-virtual-machines
 
+# BUGS
+# https://discussion.fedoraproject.org/t/libvirtd-stop-responding-after-some-time/84324/3
+
 yum group list --hidden -v
 
 #FEDORA DESKTOP
