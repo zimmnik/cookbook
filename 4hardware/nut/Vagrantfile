@@ -1,0 +1,32 @@
+#vagrant destroy -f && time vagrant up --no-provision nut-primary
+#time vagrant up --no-parallel --no-destroy-on-error nut-primary nut-secondary
+
+vms = [
+  { :hostname => "nut-primary",   :ip => "192.168.50.101", :script => "nut_primary_setup.sh"   },
+  { :hostname => "nut-secondary", :ip => "192.168.50.102", :script => "nut_secondary_setup.sh" },
+]
+
+Vagrant.configure("2") do |config|
+  vms.each do |conf|
+    config.vm.define conf[:hostname] do |node|
+      node.vm.hostname = conf[:hostname]
+      node.vm.box = "oraclelinux/8-btrfs"
+      node.vm.box_url = "https://oracle.github.io/vagrant-projects/boxes/oraclelinux/8-btrfs.json"
+      node.vm.synced_folder "../ansible", "/vagrant", type: "rsync", disabled: true
+
+      node.vm.provider :libvirt do |lv|
+        lv.title = conf[:hostname]
+        lv.cpus = 2
+        lv.memory = 2048
+        lv.video_type = 'virtio'
+        lv.graphics_type = 'spice'
+        lv.default_prefix = ''
+        lv.qemu_use_session = false
+      end
+      node.vm.network "private_network", ip: conf[:ip]
+
+      node.vm.provision "shell", privileged: true, path: "mail_relay_setup.sh"
+      node.vm.provision "shell", privileged: true, path: conf[:script]
+    end
+  end
+end

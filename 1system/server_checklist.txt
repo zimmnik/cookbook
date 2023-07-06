@@ -35,13 +35,16 @@ power
   nut
 
 raid/storage (meta raidc4?, data?)
-
 ssd trim
   grep ssd /proc/mounts
   cat /etc/fstab && sudo systemctl list-timers
 smart
   see smartd.txt 
+
 monitoring (mta?)
   see postfix_relay.txt
+  rasdaemon
+
 backup & update policy
+
 wiki

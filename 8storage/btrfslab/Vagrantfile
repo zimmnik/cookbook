@@ -1,0 +1,25 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Semyon Vasilkov (job@zimmnik.ru)
+ 
+Vagrant.configure("2") do |config|
+  config.vm.box = "fedora/36-cloud-base"
+
+  config.vm.provider :libvirt do |lv|
+    lv.qemu_use_session = false
+    lv.title = 'vagrant-btrfs'
+    lv.cpus = 2
+    lv.memory = 2048
+    lv.video_type = 'none'
+    lv.graphics_type = 'none'
+    lv.storage :file, :size => '4G'
+    lv.storage :file, :size => '4G'
+    lv.storage :file, :size => '4G'
+    lv.storage :file, :size => '4G'
+  end
+ 
+  config.vm.provision "shell", path: "run.sh"
+end
+
+#vagrant destroy -f && time vagrant up --color --no-destroy-on-error
