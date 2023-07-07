@@ -50,7 +50,7 @@ EOF
 cat /etc/ups/upsd.users && ls -alh /etc/ups/upsd.users
 sed -i "/^MODE=/ s/=.*/=netserver/" /etc/ups/nut.conf
 echo "LISTEN 0.0.0.0" > /etc/ups/upsd.conf
-#firewall-cmd --permanent --add-service=nut && firewall-cmd reload
+#firewall-cmd --permanent --add-service=nut && firewall-cmd --reload
 
 # SELINUX SETUP
 #yum install policycoreutils-python-utils audit
