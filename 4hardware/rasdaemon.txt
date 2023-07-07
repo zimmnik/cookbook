@@ -1,8 +1,5 @@
 https://serverfault.com/questions/643542/how-do-i-get-notified-of-ecc-errors-in-linux
 
-#Debian 9
-apt -y install rasdaemon libdbi-perl libclass-dbi-sqlite-perl
-systemctl cat rasdaemon
-systemctl enable --now rasdaemon
-journalctl -u rasdaemon
+yum -y install rasdaemon
+systemctl enable rasdaemon --now && 118  systemctl status rasdaemon
 ras-mc-ctl --summary
