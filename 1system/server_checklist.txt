@@ -34,9 +34,6 @@ locale
 power
   nut
 
-memory
-  rasdaemon
-
 raid/storage (meta raidc4?, data?)
 ssd trim
   grep ssd /proc/mounts
