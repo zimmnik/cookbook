@@ -1,0 +1,30 @@
+yum -y install nss-tools
+
+mkdir CA_db && certutil -N -d CA_db
+# Generate a certificate for CA
+printf 'y\n0\n\y\n' | certutil -d CA_db -S -x -n "My Root CA" -s "CN=My CA,O=MyCompany,ST=MyState,C=US" -t "CT,," -2 -v 120 -z /boot/vmlinuz-*
+# cert list
+certutil -d CA_db/ -L -n "My Root CA" | less
+#Extract the CA certificate to be able to import it in upsd (or upsmon) certificate database
+certutil -d CA_db -L -n "My Root CA" -a -o rootca.crt
+
+mkdir cert_db && certutil -N -d cert_db
+# Import the CA certificate
+certutil -d cert_db -A -n "My Root CA" -t "TC,," -a -i rootca.crt
+# Create a server certificate request (here called My nut server):
+certutil -d cert_db -R -s "CN=My nut server,O=MyCompany,ST=MyState,C=US" -a -o server.req -z /boot/vmlinuz-*
+# Sign a certificate request with the CA certificate (simulate a real CA signature)
+printf 'y\n0\ny\n' | certutil -d CA_db -C -c "My Root CA" -a -i server.req -o server.crt -2 -6 --extKeyUsage serverAuth
+# Import the signed certificate into server database:
+certutil -d cert_db -A -n "My nut server" -a -i server.crt -t ",,"
+# cert list
+certutil -L -d cert_db
+
+Jul 02 20:29:46 nut-primary nut-server[10184]:    0.002290        /etc/ups/cert_db is world readable
+Jul 02 20:29:46 nut-primary upsd[10184]: /etc/ups/cert_db is world readable
+Jul 02 20:29:46 nut-primary nut-server[10184]:    0.002402        Warning: DISABLE_WEAK_SSL is not enabled. Please consider enabling to improve network security.
+Jul 02 20:29:46 nut-primary upsd[10184]: Warning: DISABLE_WEAK_SSL is not enabled. Please consider enabling to improve network security.
+Jul 02 20:29:46 nut-primary nut-server[10184]:    0.030200        Can not find server certificate
+Jul 02 20:29:46 nut-primary upsd[10184]: Can not find server certificate
+Jul 02 20:29:46 nut-primary nut-server[10184]:    0.030409        [D1] nss_error -5977 in upscli_init / PK11_FindCertFromNickname : /etc/ups/cert_db/libnssckbi.so: cannot open shared object file: No such file or directory
+Jul 02 20:29:46 nut-primary upsd[10184]: [D1] nss_error -5977 in upscli_init / PK11_FindCertFromNickname : /etc/ups/cert_db/libnssckbi.so: cannot open shared object file: No such file or directory
