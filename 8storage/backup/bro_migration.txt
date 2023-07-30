@@ -1,0 +1,195 @@
+export DISK1="/dev/disk/by-id/ata-QEMU_HARDDISK_QM00003"
+export DISK2="/dev/disk/by-id/ata-QEMU_HARDDISK_QM00005"
+export DISK3="/dev/disk/by-id/ata-QEMU_HARDDISK_QM00007"
+export DISK4="/dev/disk/by-id/ata-QEMU_HARDDISK_QM00009"
+
+export RAW_DISKS_LIST="$(for DISK in $DISK1 $DISK2 $DISK3 $DISK4; do echo -n "$DISK "; done)"
+export BOOT_DISKS_LIST="$(for DISK in $DISK1 $DISK2 $DISK3 $DISK4; do echo -n "$DISK-part1 "; done)"
+export ROOT_DISKS_LIST="$(for DISK in $DISK1 $DISK2 $DISK3 $DISK4; do echo -n "$DISK-part2 "; done)"
+
+export CIPHER=twofish
+export MODE=ecb
+export KEY=256
+export HASH=sha1
+export PASSWORD="yandex"
+
+export RESTORE_MP="/mnt/restore"
+export BACKUP_MP="/mnt/backup"
+export BOOT_DISK="/dev/md0"
+
+#-----------------------------------------------------------------------------------------------------------------
+# CLEANUP
+# REMOVE BOOT
+umount $RESTORE_MP/boot; grep boot /proc/mounts 
+mdadm --stop "${BOOT_DISK}"; cat /proc/mdstat
+
+mdadm --zero-superblock $BOOT_DISKS_LIST; lsblk -o +label,fstype,uuid ${BOOT_DISKS_LIST}
+for DISK in $BOOT_DISKS_LIST; do wipefs -a "$DISK"; done; lsblk -o +label,fstype,uuid ${BOOT_DISKS_LIST}
+
+# REMOVE ROOT
+umount $RESTORE_MP;  grep btrfs /proc/mounts 
+for i in $(dmsetup ls --target crypt | awk '{print $1}'); do cryptsetup close $i; done; dmsetup ls --target crypt
+for DISK in $ROOT_DISKS_LIST; do wipefs -a "$DISK"; done; lsblk -o +label,fstype,uuid ${ROOT_DISKS_LIST}
+
+# REMOVE PARTITION TABLES
+for DISK in $RAW_DISKS_LIST; do wipefs -a "$DISK"; done; lsblk -o +label,fstype,uuid ${RAW_DISKS_LIST}
+
+#-----------------------------------------------------------------------------------------------------------------
+# BUILD
+# PARTITION TABLES
+for DISK in $RAW_DISKS_LIST; do parted "$DISK" mklabel msdos mkpart primary 0% 512M set 1 boot on set 1 raid on mkpart primary 512M 100% print free; done; lsblk -o +label,fstype,uuid ${RAW_DISKS_LIST}
+
+# ROOT LUKS
+grep dm_crypt /proc/modules
+time for DISK in $ROOT_DISKS_LIST; do \
+  printf "$PASSWORD" | cryptsetup luksFormat --batch-mode --force-password --label "ROOT_CRYPTED" --cipher "${CIPHER-$MODE}" --key-size "${KEY}" --hash "${HASH}" "${DISK}"
+  export UUID="$(cryptsetup luksUUID ${DISK})"
+  printf "${PASSWORD}" | cryptsetup open "${DISK}" "luks-${UUID}"
+done
+dmsetup ls --target crypt
+
+# ROOT BTRFS
+export BTRFS_DISKS_LIST="$(for DISK in $ROOT_DISKS_LIST; do echo -n "/dev/mapper/luks-$(cryptsetup luksUUID ${DISK}) "; done)" 
+time mkfs.btrfs -L ROOT -m raid1 -d raid1 $BTRFS_DISKS_LIST
+
+# BOOT MDADM
+mdadm --create ${BOOT_DISK} --homehost=any --name=BOOT --metadata=1.0 --level=1 --raid-disks=4 ${BOOT_DISKS_LIST} && mdadm --detail ${BOOT_DISK}
+mdadm --stop "${BOOT_DISK}"; mdadm --assemble ${BOOT_DISK} ${BOOT_DISKS_LIST} && mdadm --detail ${BOOT_DISK}
+
+# BOOT EXT4
+mkfs.ext4 -L BOOT /dev/md0; lsblk -f -o +label,fstype,uuid /dev/md0
+
+#-----------------------------------------------------------------------------------------------------------------
+# RESTORE
+# MOUNT BACKUP
+mkdir -p $BACKUP_MP || true
+mount -t cifs -o username=zorg,password=yandex //192.168.10.251/data/ $BACKUP_MP/; grep cifs /proc/mounts
+
+# MOUNT ROOT STAGE1
+mkdir -p $RESTORE_MP || true
+mount "/dev/mapper/luks-$(cryptsetup luksUUID ${DISK1}-part2)" $RESTORE_MP; btrfs fi usage $RESTORE_MP; btrfs su list -t $RESTORE_MP
+
+# RESTORE SUBVOLUME
+yum -y install zstd
+cd $BACKUP_MP/backup/bro/
+time zstdmt -d -c root-2023-07-29-0a3c905c.btrfs.zst | btrfs receive -v $RESTORE_MP
+
+# RENAME SUBVOLUME
+btrfs subvolume list -t $RESTORE_MP
+btrfs subvolume snapshot $RESTORE_MP/latest_weekend/ $RESTORE_MP/root
+btrfs subvolume delete $RESTORE_MP/latest_weekend/
+btrfs subvolume list -t $RESTORE_MP
+umount $RESTORE_MP; grep btrfs /proc/mounts
+
+# MOUNT ROOT STAGE2
+mount -o subvol=root "/dev/mapper/luks-$(cryptsetup luksUUID ${DISK1}-part2)" $RESTORE_MP; grep btrfs /proc/mounts
+
+# MOUNT BOOT
+mkdir -p $RESTORE_MP/boot || true
+mv $RESTORE_MP/boot $RESTORE_MP/boot_old
+mount ${BOOT_DISK}$RESTORE_MP/boot; grep boot /proc/mounts
+shopt -s dotglob; mv $RESTORE_MP/boot_old/* $RESTORE_MP/boot
+rm -v $RESTORE_MP/boot_old/
+
+#-----------------------------------------------------------------------------------------------------------------
+# SETUP
+# CHROOT
+\cp --remove-destination /etc/resolv.conf $RESTORE_MP/etc/
+for i in {dev,sys,proc}; do mount -o bind /$i /$RESTORE_MP/$i; done
+chroot $RESTORE_MP /bin/bash
+
+# SELINUX
+touch /.autorelabel
+
+# FSTAB
+blkid -s UUID
+vim /etc/fstab
+
+# MDADM
+mdadm --detail --scan --verbose | awk '/ARRAY/ {print}' >> /etc/mdadm.conf; cat /etc/mdadm.conf
+
+# CRYPTSETUP
+dmsetup ls --target crypt
+vim /etc/crypttab
+dracut --regenerate-all --force
+vim /etc/default/grub
+
+# DRACUT-SSHD
+curl -LO https://github.com/gsauthof/dracut-sshd/archive/refs/tags/0.6.6.tar.gz
+tar -zxvf 0.6.6.tar.gz 
+cp -ri dracut-sshd-0.6.6/46sshd/ /usr/lib/dracut/modules.d/
+rm -rf dracut-sshd-0.6.6/ 0.6.6.tar.gz
+dracut --list-modules | grep ssh
+cat /root/.ssh/authorized_keys
+dracut -f -v
+lsinitrd | grep 'authorized\|bin/sshd\|network/20'
+grubby --update-kernel=ALL --args="rd.neednet=1 ip=dhcp"
+
+# GRUB
+rm -vf /boot/loader/entries/*.conf
+kernel-install add $(uname -r) /lib/modules/$(uname -r)/vmlinuz; ls /boot/loader/entries/
+rm /boot/grub2/grubenv
+grub2-mkconfig -o /boot/grub2/grub.cfg
+for DISK in $RAW_DISKS_LIST; do grub2-install "$DISK"; done
+
+# BTRFS BALANCE
+btrfs device usage $RESTORE_MP | tee before.txt
+btrfs balance start --full-balance $RESTORE_MP
+btrfs device usage $RESTORE_MP | tee after.txt
+vimdiff before.txt after.txt
+
+#-----------------------------------------------------------------------------------------------------------------
+#BENCHMARK
+cryptsetup benchmark
+https://superuser.com/q/775200
+
+#FULL BENCHMARK WITH IO SPEED
+time for CIPHER in aes twofish serpent cast5 cast6; do
+  for MODE in ecb cbc-plain cbc-essiv:sha1 cbc-essiv:sha256 cbc-essiv:sha512 cbc-essiv:ripemd160; do
+      for KEY in 64 128 256 512 1024; do
+        RESULT=$(cryptsetup benchmark --cipher $CIPHER-$MODE --key-size $KEY 2>> /dev/null)
+        retVal=$?
+        if [ $retVal -eq 0 ]; then
+          echo "$RESULT" |& grep -E -v "memory|Algorithm|not available" | tr -d '\n'
+          printf " $CIPHER-$MODE $KEY \n"   
+        fi        
+      done
+  done
+done | tee result.txt
+sort -r -n -k 5 result.txt | less
+
+#BENCHMARK WITH HASH
+time for CIPHER in twofish; do
+  for MODE in ecb; do
+    for HASH in sha1 sha256 sha512 ripemd160; do
+      for KEY in 128 256; do
+        cryptsetup benchmark --cipher $CIPHER-$MODE --key-size $KEY --hash $HASH | grep -v memory | awk '{print $2}' | tr -d '\n'
+        printf " $CIPHER-$MODE $KEY $HASH\n"
+      done
+    done
+  done
+done | tee result_best.txt
+sort -r result_best.txt
+
+#BENCHMARK WITH HASH
+time for CIPHER in aes twofish serpent cast5 cast6; do
+  for MODE in ecb cbc-plain cbc-essiv:sha1 cbc-essiv:sha256 cbc-essiv:sha512 cbc-essiv:ripemd160; do
+    for HASH in sha1 sha256 sha512 ripemd160; do
+      for KEY in 64 128 256 512 1024; do
+        cryptsetup benchmark --cipher $CIPHER-$MODE --key-size $KEY --hash $HASH | grep -v memory | awk '{print $2}' | tr -d '\n'
+        printf " $CIPHER-$MODE $KEY $HASH\n"
+      done
+    done
+  done
+done | tee result_hash.txt
+sort -r result_hash.txt | less
+
+time for CIPHER in aes twofish serpent; do
+  for MODE in cbc-plain; do
+      for KEY in 256 ; do
+        cryptsetup benchmark --cipher $CIPHER-$MODE --key-size $KEY | grep -E -v "memory|Algorithm" | tr -d '\n'
+        printf " $CIPHER-$MODE $KEY $HASH\n"
+      done
+  done
+done | tee result.txt
+sort -r result.txt | less
