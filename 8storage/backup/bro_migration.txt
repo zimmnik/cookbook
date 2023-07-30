@@ -97,7 +97,7 @@ mount -o subvol=root "/dev/mapper/luks-$(cryptsetup luksUUID ${DISK1}-part2)" $R
 # MOUNT BOOT
 mkdir -p $RESTORE_MP/boot || true
 mv $RESTORE_MP/boot $RESTORE_MP/boot_old
-mount ${BOOT_DISK}$RESTORE_MP/boot; grep boot /proc/mounts
+mount ${BOOT_DISK} $RESTORE_MP/boot; grep boot /proc/mounts
 shopt -s dotglob; mv $RESTORE_MP/boot_old/* $RESTORE_MP/boot
 rm -v $RESTORE_MP/boot_old/
 
