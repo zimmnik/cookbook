@@ -1,3 +1,13 @@
+#-----------------------------------------------------------------------------------------------------------------
+# ORACLE 8 RESCUE SHELL
+nmcli c s
+nmcli c u enp1s0
+cp /etc/ssh/sshd_config.anaconda /etc/ssh/sshd_config
+systemctl start sshd && systemctl status sshd
+ip r
+
+#-----------------------------------------------------------------------------------------------------------------
+# VARS
 export DISK1="/dev/disk/by-id/ata-QEMU_HARDDISK_QM00003"
 export DISK2="/dev/disk/by-id/ata-QEMU_HARDDISK_QM00005"
 export DISK3="/dev/disk/by-id/ata-QEMU_HARDDISK_QM00007"
@@ -106,7 +116,8 @@ blkid -s UUID
 vim /etc/fstab
 
 # MDADM
-mdadm --detail --scan --verbose | awk '/ARRAY/ {print}' >> /etc/mdadm.conf; cat /etc/mdadm.conf
+mdadm --detail --scan --verbose | awk '/ARRAY/ {print}' >> /etc/mdadm.conf
+printf '\nMAILADDR root' >> >> /etc/mdadm.conf; cat /etc/mdadm.conf
 
 # CRYPTSETUP
 dmsetup ls --target crypt
