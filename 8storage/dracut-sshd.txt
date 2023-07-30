@@ -3,9 +3,9 @@ https://github.com/gsauthof/dracut-sshd#readme
 curl -LO https://github.com/gsauthof/dracut-sshd/archive/refs/tags/0.6.6.tar.gz
 tar -zxvf 0.6.6.tar.gz 
 cp -ri dracut-sshd-0.6.6/46sshd/ /usr/lib/dracut/modules.d/
-rm -r dracut-sshd-0.6.6/
-cat /root/.ssh/authorized_keys
+rm -rf dracut-sshd-0.6.6/ 0.6.6.tar.gz
 dracut --list-modules | grep ssh
+cat /root/.ssh/authorized_keys
 dracut -f -v
 lsinitrd | grep 'authorized\|bin/sshd\|network/20'
 grubby --update-kernel=ALL --args="rd.neednet=1 ip=dhcp"
