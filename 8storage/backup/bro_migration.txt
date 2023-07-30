@@ -126,6 +126,7 @@ lsinitrd | grep 'authorized\|bin/sshd\|network/20'
 grubby --update-kernel=ALL --args="rd.neednet=1 ip=dhcp"
 
 # GRUB
+# https://access.redhat.com/solutions/5847011
 rm -vf /boot/loader/entries/*.conf
 kernel-install add $(uname -r) /lib/modules/$(uname -r)/vmlinuz; ls /boot/loader/entries/
 rm /boot/grub2/grubenv
