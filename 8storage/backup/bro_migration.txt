@@ -85,12 +85,10 @@ mkdir -p $RESTORE_MP || true
 mount "/dev/mapper/luks-$(cryptsetup luksUUID ${DISK1}-part2)" $RESTORE_MP; btrfs fi usage $RESTORE_MP; btrfs su list -t $RESTORE_MP
 
 # RESTORE SUBVOLUME
-yum -y install zstd
 cd $BACKUP_MP/backup/bro/
-time zstdmt -d -c root-2023-07-29-0a3c905c.btrfs.zst | btrfs receive -v $RESTORE_MP
+time zstdmt -d -c root-2023-07-29-0a3c905c.btrfs.zst | btrfs receive -v $RESTORE_MP; btrfs subvolume list -t $RESTORE_MP
 
 # RENAME SUBVOLUME
-btrfs subvolume list -t $RESTORE_MP
 btrfs subvolume snapshot $RESTORE_MP/latest_weekend/ $RESTORE_MP/root
 btrfs subvolume delete $RESTORE_MP/latest_weekend/
 btrfs subvolume list -t $RESTORE_MP
