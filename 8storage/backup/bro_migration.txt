@@ -98,8 +98,8 @@ umount $RESTORE_MP; grep btrfs /proc/mounts
 mount -o subvol=root "/dev/mapper/luks-$(cryptsetup luksUUID ${DISK1}-part2)" $RESTORE_MP; grep btrfs /proc/mounts
 
 # MOUNT BOOT
-mkdir -p $RESTORE_MP/boot || true
 mv $RESTORE_MP/boot $RESTORE_MP/boot_old
+mkdir -p $RESTORE_MP/boot || true
 mdadm --assemble ${BOOT_DISK} ${BOOT_DISKS_LIST} && mdadm --detail ${BOOT_DISK}
 mount ${BOOT_DISK} $RESTORE_MP/boot; grep boot /proc/mounts
 shopt -s dotglob; mv $RESTORE_MP/boot_old/* $RESTORE_MP/boot
@@ -121,15 +121,22 @@ vim /etc/fstab
 
 # MDADM
 mdadm --detail --scan --verbose | awk '/ARRAY/ {print}' >> /etc/mdadm.conf
-printf '\nMAILADDR root' >> >> /etc/mdadm.conf; cat /etc/mdadm.conf
+printf '\nMAILADDR root' >> /etc/mdadm.conf; cat /etc/mdadm.conf
 
 # CRYPTSETUP
 dmsetup ls --target crypt
+time for DISK in $ROOT_DISKS_LIST; do
+  export UUID="$(cryptsetup luksUUID ${DISK})";
+  echo "luks-${UUID} UUID=${UUID} none" >> /etc/crypttab
+  #echo "luks-${UUID} UUID=${UUID} none discard" >> /etc/crypttab
+  grubby --update-kernel=ALL --args="rd.luks.uuid=luks-${UUID}"
+done
 vim /etc/crypttab
 dracut --regenerate-all --force
 vim /etc/default/grub
 
 # DRACUT-SSHD
+yum -y install kernel-uek-$(uname -r)
 curl -LO https://github.com/gsauthof/dracut-sshd/archive/refs/tags/0.6.6.tar.gz
 tar -zxvf 0.6.6.tar.gz 
 cp -ri dracut-sshd-0.6.6/46sshd/ /usr/lib/dracut/modules.d/
@@ -143,8 +150,9 @@ grubby --update-kernel=ALL --args="rd.neednet=1 ip=dhcp"
 # GRUB
 # https://access.redhat.com/solutions/5847011
 rm -vf /boot/loader/entries/*.conf
-kernel-install add $(uname -r) /lib/modules/$(uname -r)/vmlinuz; ls /boot/loader/entries/
+time kernel-install add $(uname -r) /lib/modules/$(uname -r)/vmlinuz; ls /boot/loader/entries/
 rm /boot/grub2/grubenv
+echo "GRUB_DISABLE_OS_PROBER=true" >> /etc/default/grub
 grub2-mkconfig -o /boot/grub2/grub.cfg
 for DISK in $RAW_DISKS_LIST; do grub2-install "$DISK"; done
 
