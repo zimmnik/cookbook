@@ -32,7 +32,6 @@ export BOOT_DISK="/dev/md0"
 # REMOVE BOOT
 umount $RESTORE_MP/boot; grep boot /proc/mounts 
 mdadm --stop "${BOOT_DISK}"; cat /proc/mdstat
-
 mdadm --zero-superblock $BOOT_DISKS_LIST; lsblk -o +label,fstype,uuid ${BOOT_DISKS_LIST}
 for DISK in $BOOT_DISKS_LIST; do wipefs -a "$DISK"; done; lsblk -o +label,fstype,uuid ${BOOT_DISKS_LIST}
 
@@ -61,13 +60,14 @@ dmsetup ls --target crypt
 # ROOT BTRFS
 export BTRFS_DISKS_LIST="$(for DISK in $ROOT_DISKS_LIST; do echo -n "/dev/mapper/luks-$(cryptsetup luksUUID ${DISK}) "; done)" 
 time mkfs.btrfs -L ROOT -m raid1 -d raid1 $BTRFS_DISKS_LIST
+for i in $(dmsetup ls --target crypt | awk '{print $1}'); do cryptsetup close $i; done; dmsetup ls --target crypt
 
 # BOOT MDADM
 mdadm --create ${BOOT_DISK} --homehost=any --name=BOOT --metadata=1.0 --level=1 --raid-disks=4 ${BOOT_DISKS_LIST} && mdadm --detail ${BOOT_DISK}
-mdadm --stop "${BOOT_DISK}"; mdadm --assemble ${BOOT_DISK} ${BOOT_DISKS_LIST} && mdadm --detail ${BOOT_DISK}
 
 # BOOT EXT4
-mkfs.ext4 -L BOOT /dev/md0; lsblk -f -o +label,fstype,uuid /dev/md0
+mkfs.ext4 -L BOOT $BOOT_DISK; lsblk -f -o +label,fstype,uuid $BOOT_DISK
+mdadm --stop "${BOOT_DISK}"; mdadm --detail ${BOOT_DISK}
 
 #-----------------------------------------------------------------------------------------------------------------
 # RESTORE
@@ -76,6 +76,11 @@ mkdir -p $BACKUP_MP || true
 mount -t cifs -o username=zorg,password=yandex //192.168.10.251/data/ $BACKUP_MP/; grep cifs /proc/mounts
 
 # MOUNT ROOT STAGE1
+time for DISK in $ROOT_DISKS_LIST; do
+  export UUID="$(cryptsetup luksUUID ${DISK})";
+  printf "${PASSWORD}" | cryptsetup open "${DISK}" "luks-${UUID}"
+done
+dmsetup ls --target crypt
 mkdir -p $RESTORE_MP || true
 mount "/dev/mapper/luks-$(cryptsetup luksUUID ${DISK1}-part2)" $RESTORE_MP; btrfs fi usage $RESTORE_MP; btrfs su list -t $RESTORE_MP
 
@@ -97,6 +102,7 @@ mount -o subvol=root "/dev/mapper/luks-$(cryptsetup luksUUID ${DISK1}-part2)" $R
 # MOUNT BOOT
 mkdir -p $RESTORE_MP/boot || true
 mv $RESTORE_MP/boot $RESTORE_MP/boot_old
+mdadm --assemble ${BOOT_DISK} ${BOOT_DISKS_LIST} && mdadm --detail ${BOOT_DISK}
 mount ${BOOT_DISK} $RESTORE_MP/boot; grep boot /proc/mounts
 shopt -s dotglob; mv $RESTORE_MP/boot_old/* $RESTORE_MP/boot
 rm -v $RESTORE_MP/boot_old/
