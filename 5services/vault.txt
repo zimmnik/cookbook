@@ -1,0 +1,58 @@
+#start server
+docker run -it --rm -p 8200:8200 docker.io/library/vault:1.13.3
+
+#start client
+docker run -it --rm --net host docker.io/library/vault:1.13.3 sh
+
+# set address
+export VAULT_ADDR='http://0.0.0.0:8200'
+#export VAULT_ADDR="https://dev-vault.example.com
+
+# check server status
+vault status
+
+# auth
+vault login -method=token
+#vault login -method=ldap username=zorg
+
+# list enabled instances of engines
+vault secrets list
+
+# check authorization
+vault policy list
+
+---------------------------------------------------------------------------------------------------------------------------
+# FYI https://developer.hashicorp.com/vault/docs/secrets/kv/kv-v2
+# create dedicated instance of kv engine
+vault secrets enable -version=2 -path=terra-kv-zorg -description="pilot, to be deleted" kv && vault secrets list
+
+# update policy
+vault policy read policy-devops > p.json
+
+vim p.json
+path "terra-kv-zorg/*" {
+  capabilities = ["create", "read", "update", "patch", "delete", "list", "sudo"]
+}
+ 
+vault policy write policy-devops p.json
+
+# create secret
+vault kv put -mount=terra-kv-zorg terra-vsphere-main-api domain="rig.example.com" login="joe" password="blahblah"
+
+# get record list
+vault kv list terra-kv-zorg
+
+# get whole record
+vault kv get -mount=terra-kv-zorg terra-vsphere-main-api
+
+# update custom value in secret
+vault kv patch -mount=terra-kv-zorg terra-vsphere-main-api password="bugaga"
+
+# get custom value in secret
+vault kv get -mount=terra-kv-zorg -field=password terra-vsphere-main-api
+
+# remove secret
+vault kv metadata delete -mount=terra-kv-zorg terra-vsphere-main-api
+
+# disable our instance of kv engine
+vault secrets disable terra-kv-zorg
