@@ -82,7 +82,7 @@ path "terra-kv-main/data/vsphere-api" {
     capabilities = ["read"]
 }
 EOF
-vault policy write terra-ci-terraform-essentials vault-policy-terra-ci-terraform-essentials.hcl && vault policy list
+vault policy write terra-ci-terraform-essentials vault-policy-terra-ci-terraform-essentials.hcl && :h
 vault policy read terra-ci-terraform-essentials
 
 #STEP 3 enable jwt se instance
@@ -108,7 +108,6 @@ cat << EOF > vault-role-k8s-dynamic.json
 }
 EOF
 vault write auth/jwt/role/k8s-dynamic @vault-role-k8s-dynamic.json && vault list auth/jwt/role/
-
 vault read -format=json auth/jwt/role/k8s-dynamic | less
 
 # GITLAB STAGE
