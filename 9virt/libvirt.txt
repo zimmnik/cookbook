@@ -43,20 +43,22 @@ pacman -Syy && pacman -S --noconfirm xterm && eval $(/usr/bin/resize) && mc
 virt-install -n OL9 --osinfo ol9.0 --boot uefi \
 --vcpus 8 --ram 4096 --video none --graphics none --disk path=/var/lib/libvirt/images/OL9.qcow2,size=16 -w network=default \
 --location OracleLinux-R9-U0-x86_64-boot-uek.iso,kernel=images/pxeboot/vmlinuz,initrd=/images/pxeboot/initrd.img \
---extra-args "inst.stage2=hd:LABEL=OL-9-0-0-BaseOS-x86_64 inst.ks=https://raw.githubusercontent.com/zimmnik/provisioner/master/kickstart/ol9a.cfg console=ttyS0 inst.text"
-#To exit a virsh console session, type CTRL + Shift followed by ]
+--extra-args "inst.stage2=hd:LABEL=OL-9-0-0-BaseOS-x86_64 console=ttyS0 inst.text \
+inst.ks=https://raw.githubusercontent.com/zimmnik/provisioner/master/kickstart/ol9a.cfg "
+#To exit a virsh console session - CTRL + Shift + ]
+
+time virt-install -n OL8 --osinfo ol8.5 --boot uefi \
+--vcpus 2 --ram 2048  --video none --graphics none --disk path=/var/lib/libvirt/images/OL8.qcow2,size=16 -w network=default \
+--location OL8U8-x86_64-boot-uek.iso,kernel=images/pxeboot/vmlinuz,initrd=/images/pxeboot/initrd.img \
+--extra-args "inst.stage2=hd:LABEL=OL-8-8-0-BaseOS-x86_64 console=ttyS0 inst.text \
+inst.ks=https://raw.githubusercontent.com/zimmnik/provisioner/master/kickstart/oracle8A.cfg"
 
 virt-install -n f37 --osinfo fedora35 --boot uefi \
 --vcpus 2 --ram 1024 --video none --graphics none  --disk path=/var/lib/libvirt/images/f37.qcow2,size=8 \
+--network type=direct,source_mode=bridge,source=enp4s0 \
 --location Fedora-Everything-netinst-x86_64-37-1.7.iso,kernel=/images/pxeboot/vmlinuz,initrd=/images/pxeboot/initrd.img \
---extra-args "inst.stage2=hd:LABEL=Fedora-E-dvd-x86_64-37 inst.ks=https://raw.githubusercontent.com/zimmnik/provisioner/master/kickstart/f37a.cfg console=ttyS0" \
---network type=direct,source_mode=bridge,source=enp4s0
-
-# VIA GUI, MANUAL PARTITIONING
-virt-install -n OL9 --osinfo ol9.0 --boot uefi \
---vcpus 8 --ram 4096 --disk path=/var/lib/libvirt/images/OL9.qcow2,size=16 -w network=default \
---location OracleLinux-R9-U0-x86_64-boot-uek.iso,kernel=images/pxeboot/vmlinuz,initrd=/images/pxeboot/initrd.img \
---extra-args "inst.stage2=hd:LABEL=OL-9-0-0-BaseOS-x86_64 quiet inst.ks=https://raw.githubusercontent.com/zimmnik/provisioner/master/kickstart/ol9.cfg"
+--extra-args "inst.stage2=hd:LABEL=Fedora-E-dvd-x86_64-37 console=ttyS0 inst.text \
+inst.ks=https://raw.githubusercontent.com/zimmnik/provisioner/master/kickstart/f37a.cfg "
 
 # STOP and REMOVE VM
 virsh destroy OL9; virsh list --all; virsh undefine OL9 --nvram --storage vda; virsh list --all; virsh vol-list default
