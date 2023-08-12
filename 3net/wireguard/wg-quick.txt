@@ -1,0 +1,13 @@
+yum -y install wireguard-tools
+
+cat << 'EOF' > /etc/wireguard/wg0.conf 
+[Interface]
+Address = 192.168.5.249/32
+PrivateKey = blahblah1
+[Peer]
+PublicKey = blahblah2
+AllowedIPs = 192.168.5.0/24, 192.168.4.0/24
+Endpoint = addr:port
+EOF
+
+systemctl start wg-quick@wg0 --now && systemctl status wg-quick@wg0
