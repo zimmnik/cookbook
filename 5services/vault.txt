@@ -2,7 +2,7 @@
 docker run -it --rm -p 8200:8200 docker.io/library/vault:1.13.3
 
 #start client
-docker run -it --rm --net host docker.io/library/vault:1.13.3 sh
+docker run -it --rm --net host docker.io/library/vault:1.13.3 sh -c "apk add openssh && ash"
 
 # set address
 export VAULT_ADDR='http://0.0.0.0:8200'
@@ -14,6 +14,9 @@ vault status
 # auth
 vault login -method=token
 #vault login -method=ldap username=zorg
+#vault read auth/ldap/config
+#vault list auth/ldap/groups
+#vault read -format=json auth/ldap/groups/in-gsu-vault_adminqq
 
 # list enabled instances of engines
 vault secrets list
@@ -58,10 +61,73 @@ vault kv metadata delete -mount=terra-kv-zorg terra-vsphere-main-api
 vault secrets disable terra-kv-zorg
 
 ---------------------------------------------------------------------------------------------------------------------------
+# SSH AUTH
+
+# 1 VAULT STAGE
+# create instance of ssh secret engine
+vault secrets enable -path=terra-ssh-main -description="ssh auth for virtual machines" ssh
+# generate SSL CA
+vault write terra-ssh-main/config/ca generate_signing_key=true
+
+# create management policy for vault admins
+cat << EOF > terra-ssh-main-admin.hcl
+path "terra-ssh-main/*" {
+  capabilities = ["create", "read", "update", "patch", "delete", "list", "sudo"]
+}
+EOF
+vault policy write terra-ssh-main-admin terra-ssh-main-admin.hcl
+#apply policy for vault admins. It depends for auth methods
+
+# create ssh admin role for approved vault users
+cat << EOF > vault-ssh-role-admin.json 
+{
+  "key_type": "ca",
+  "allow_user_certificates": true,
+  "default_user": "admin",
+  "allowed_users": "admin",
+  "allowed_extensions": "permit-pty,permit-port-forwarding",
+  "default_extensions": {
+    "permit-pty": ""
+  },
+  "ttl": "12h"
+}
+EOF
+vault write terra-ssh-main/roles/admin @vault-ssh-role-admin.json
+
+# create policy for approved vault users
+cat << EOF > terra-user-ssh-admin.hcl
+path “terra-ssh-main/roles/*” {
+ capabilities = [“list”]
+}
+path “terra-ssh-main/roles/admin” {
+ capabilities = [“create”,”update”]
+}
+EOF
+vault policy write terra-user-ssh-admin terra-user-ssh-admin.hcl
+#apply policy for vault admin
+
+# 2 SSHD STAGE
+sudo curl -L https://dev-vault.example.com/v1/terra-ssh-main/public_key -o /etc/ssh/trusted-user-ca-keys.pem
+echo "TrustedUserCAKeys /etc/ssh/trusted-user-ca-keys.pem" | sudo tee -a /etc/ssh/sshd_config 
+sudo systemctl restart sshd
+
+# 3 LOGIN STAGE
+
+export VAULT_ADDR="https://dev-vault.example.com" && vault status
+vault login -method=ldap username=svasilkov
+
+ssh-keygen -b 2048 -t rsa -f ~/.ssh/id_rsa_demo
+eval $(ssh-agent -s)
+ssh-add ~/.ssh/id_rsa_demo && ssh-add -L
+
+vault write -field=signed_key terra-ssh-main/sign/admin public_key=@$HOME/.ssh/id_rsa_demo.pub > ~/.ssh/signed-cert.pub && ssh-keygen -Lf ~/.ssh/signed-cert.pub
+ssh -i ~/.ssh/signed-cert.pub -i ~/.ssh/id_rsa_demo admin@k8s-storage-1-dev-198.terra.example.com
+
+---------------------------------------------------------------------------------------------------------------------------
 # DEBUG
 vault audit enable file file_path=/var/log/vault_audit.log
 vault audit list
-vault audit disable file 
+vault audit disable file
 
 ---------------------------------------------------------------------------------------------------------------------------
 # GETTING SECRETS VIA JWT TOKENS IN GITLAB CICD
@@ -131,3 +197,5 @@ a:debug:
   needs: []
   script:
     - echo "${VSPHERE_SERVER^^}"
+
+
