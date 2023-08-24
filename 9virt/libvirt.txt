@@ -100,3 +100,11 @@ virt-install -n sysrescd --osinfo linux2020 --install no_install=yes  \
 # tab, after esc for repaint menu
 # choose menu item with up\down key, tab key for edit boot options, add kernel arg: console=ttyS0, enter for run
 pacman -Syy && pacman -S --noconfirm xterm && eval $(/usr/bin/resize) && mc
+
+#--------------------------------------------------------
+Libvirtd stop responding after some time
+sudo tee /etc/sysconfig/virtnetworkd << EOF > /dev/null
+VIRTNETWORKD_ARGS=
+EOF
+sudo systemctl enable virtnetworkd.service
+sudo systemctl restart virtnetworkd.service
