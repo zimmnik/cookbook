@@ -40,11 +40,13 @@ pacman -Syy && pacman -S --noconfirm xterm && eval $(/usr/bin/resize) && mc
 
 #---------------------------------------------------------------------------------------------------------------
 # AUTO WITH SERIAL
-virt-install -n OL9 --osinfo ol9.0 --boot uefi \
---vcpus 8 --ram 4096 --video none --graphics none --disk path=/var/lib/libvirt/images/OL9.qcow2,size=16 -w network=default \
---location OracleLinux-R9-U0-x86_64-boot-uek.iso,kernel=images/pxeboot/vmlinuz,initrd=/images/pxeboot/initrd.img \
---extra-args "inst.stage2=hd:LABEL=OL-9-0-0-BaseOS-x86_64 console=ttyS0 inst.text \
-inst.ks=https://raw.githubusercontent.com/zimmnik/provisioner/master/kickstart/ol9a.cfg "
+virt-install -n gitlab --osinfo ol9 --boot uefi \
+--vcpus 4 --ram 4096 --video none --graphics none --disk path=/var/lib/libvirt/images/gitlab.qcow2,size=64 \
+--network type=direct,source=eno1.4,source_mode=bridge \
+--location OracleLinux-R9-U2-x86_64-boot-uek.iso,kernel=images/pxeboot/vmlinuz,initrd=/images/pxeboot/initrd.img \
+--extra-args "inst.stage2=hd:LABEL=OL-9-2-0-BaseOS-x86_64 console=ttyS0 inst.text \
+inst.ks=https://raw.githubusercontent.com/zimmnik/provisioner/master/kickstart/oracleA.cfg"
+
 #To exit a virsh console session - CTRL + Shift + ]
 
 time virt-install -n OL8 --osinfo ol8.5 --boot uefi \
