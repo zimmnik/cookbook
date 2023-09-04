@@ -192,15 +192,11 @@ echo "TrustedUserCAKeys /etc/ssh/trusted-user-ca-keys.pem" | sudo tee -a /etc/ss
 sudo systemctl restart sshd
 
 # 3 USER SSH LOGIN STAGE
-export VAULT_ADDR="https://dev-vault.example.com" && vault status
-vault login -method=ldap username=zorg
+ssh-keygen -b 2048 -t rsa -N "" -f ~/.ssh/id_rsa_temp && chmod 0600 ~/.ssh/id_rsa_temp
+vault write -address=https://dev-vault.example.com -field=signed_key terra-ssh-main/sign/admin public_key=@$HOME/.ssh/id_rsa_temp.pub > ~/.ssh/id_rsa_temp_signed.pub && chmod 0600 ~/.ssh/id_rsa_temp_signed.pub
+ssh-keygen -Lf ~/.ssh/id_rsa_temp_signed.pub
 
-ssh-keygen -b 2048 -t rsa -f ~/.ssh/id_rsa_demo
-eval $(ssh-agent -s)
-ssh-add ~/.ssh/id_rsa_demo && ssh-add -L
-
-vault write -field=signed_key terra-ssh-main/sign/admin public_key=@$HOME/.ssh/id_rsa_demo.pub > ~/.ssh/signed-cert.pub && ssh-keygen -Lf ~/.ssh/signed-cert.pub
-ssh -i ~/.ssh/signed-cert.pub -i ~/.ssh/id_rsa_demo admin@k8s-storage-1-dev-198.terra.example.com
+ssh -4 -i ~/.ssh/id_rsa_temp_signed.pub -i ~/.ssh/id_rsa_temp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null admin@k8s-storage-1-dev-271.terra.example.com
 
 # 4 CI SSH LOGIN STAGE
 -------------------------------------------------------------------------------
