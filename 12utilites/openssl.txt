@@ -1,5 +1,27 @@
 #see content pem certificate
-openssl x509 -inform pem -noout -text -in cert.crt
+openssl x509 -in cert.crt -noout -text 
 
 #see content certificate from site
-echo | openssl s_client -showcerts -servername example.com -connect 1.1.9.38:6443 2>/dev/null | openssl x509 -inform pem -noout -text | grep Not
+echo | openssl s_client -showcerts -servername gitlab.mos.local -connect 192.168.4.248:443 2>/dev/null | openssl x509 -inform pem -noout -text | less
+echo | openssl s_client -showcerts -connect gitlab.mos.local:443 | openssl x509 -noout -text | less
+
+# https://stackoverflow.com/questions/10175812/how-to-generate-a-self-signed-ssl-certificate-using-openssl
+#----------------------------------------------------------------------------------------------------------------------------
+#SELF SIGNED WILDCARD CERT WITH CA (OpenSSL 3.0.1 14 Dec 2021 (Library: OpenSSL 3.0.1 14 Dec 2021))
+
+# create certificate authority
+openssl req -newkey rsa:2048 -noenc -keyout mos_local_root_CA.key \
+-x509 -sha256 -days 3560 -subj "/C=RU/ST=Moscow/L=Moscow/O=Zimmnik Private Certification Services/OU=Main/CN=Mnevniki Certification Authority/emailAddress=admin@zimmnik.ru" -out mos_local_root_CA.crt
+openssl x509 -in mos_local_root_CA.crt -noout -text
+
+# create certificate signing request
+openssl req -newkey rsa:2048 -noenc -keyout wild_mos_local.key \
+-subj "/C=RU/ST=Moscow/L=Moscow/O=Private/OU=Main/CN=mos.local/emailAddress=admin@zimmnik.ru" \
+-addext "subjectAltName=DNS:*.mos.local" -new -sha256 -out wild_mos_local.csr
+openssl req -in wild_mos_local.csr -text -verify -noout
+
+# create certificate from signing request
+openssl x509 -CA mos_local_root_CA.crt -CAkey mos_local_root_CA.key -CAcreateserial \
+-req -sha256 -in wild_mos_local.csr -days 3560 -copy_extensions=copyall -out wild_mos_local.crt
+openssl x509 -in wild_mos_local.crt -noout -text
+\rm -v wild_mos_local.csr
