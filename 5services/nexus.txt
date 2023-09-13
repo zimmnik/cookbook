@@ -1,0 +1,6 @@
+curl --silent --show-error --user "${TF_HTTP_USERNAME}:${TF_HTTP_PASSWORD}" \
+--upload-file ansible/artifacts/admin.conf \
+"${TERRAFORM_HTTP_BACKEND_URL}/${CI_PROJECT_PATH_SLUG}/${CI_COMMIT_REF_SLUG}/admin.conf"
+
+curl --silent --show-error --user "${TF_HTTP_USERNAME}:${TF_HTTP_PASSWORD}" \
+-o admin.conf "${TERRAFORM_HTTP_BACKEND_URL}/${CI_PROJECT_PATH_SLUG}/${CI_COMMIT_REF_SLUG}/admin.conf"
