@@ -1,3 +1,4 @@
+# FYI https://www.hashicorp.com/blog/managing-ssh-access-at-scale-with-hashicorp-vault
 #start server
 docker run -it --rm -p 8200:8200 docker.io/library/vault:1.13.3
 
