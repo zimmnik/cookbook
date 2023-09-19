@@ -11,6 +11,7 @@ set -o nounset
 export MAILBOX="blahblah"
 export MAILPASS="blahblah"
 export SMTPHOST="[smtp.gmail.com]:587"
+#export SMTPHOST="[smtp.yandex.ru]:465"
 
 ## INSTALL
 yum -yq install postfix cyrus-sasl-plain
@@ -39,6 +40,8 @@ smtp_use_tls = yes
 smtp_sasl_auth_enable = yes
 smtp_sasl_security_options =
 smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+smtp_tls_wrappermode = yes
+smtp_tls_security_level = encrypt
 EOF
 systemctl enable postfix --now
 #sleep 2 && journalctl -u postfix
