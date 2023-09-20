@@ -1,0 +1,3 @@
+# check status
+source /etc/etcd.env 
+etcdctl --write-out=table --endpoints=$ETCDCTL_ENDPOINTS --cacert=$ETCDCTL_CACERT --cert=$ETCDCTL_CERT --key=$ETCDCTL_KEY --insecure-transport=false endpoint status
