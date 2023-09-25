@@ -44,7 +44,7 @@ systemctl restart gitlab-runner
 
 # send email
 gitlab-rails console
-Notify.test_email('dbp_devops@inno.tech', 'Blahblah', 'yep').deliver_now
+Notify.test_email('dbp_devops@example.com', 'Blahblah', 'yep').deliver_now
 
 # Exchange with self signed cert
 gitlab_rails['smtp_enable'] = true
