@@ -41,3 +41,20 @@ systemctl restart gitlab-runner
 
 Если сертификаты были обновлены и в файле  gitlab.rb ничего не менялось, тогда gitlab-ctl reconfigure не перезапустит nginx. Команда gitlab-ctl hup nginx решает эту проблему.
 Сертификат хоста в том же файле должен содержать сертификаты промежуточных центров. Их достаточно объединить в текстовом редакторе
+
+# send email
+gitlab-rails console
+Notify.test_email('dbp_devops@inno.tech', 'Blahblah', 'yep').deliver_now
+
+# Exchange with self signed cert
+gitlab_rails['smtp_enable'] = true
+gitlab_rails['smtp_address'] = 'mail.example.com'
+gitlab_rails['smtp_port'] = '587'
+gitlab_rails['smtp_user_name'] = 'gitlab'
+gitlab_rails['smtp_password'] = 'password'
+gitlab_rails['smtp_domain'] = 'mail.example.com'
+gitlab_rails['smtp_authentication'] = 'login'
+gitlab_rails['smtp_enable_starttls_auto'] = 'true'
+#gitlab_rails['smtp_tls'] = true
+#gitlab_rails['smtp_ssl'] = false
+gitlab_rails['smtp_ca_file'] = '/etc/gitlab/trusted-certs/mail.crt'
