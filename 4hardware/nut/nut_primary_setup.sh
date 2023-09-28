@@ -95,5 +95,6 @@ systemctl enable nut.target --now
 sleep 2 && journalctl -u nut*
 
 #TEST
+upsc APC
 upscmd -u admin -p ${ADMIN_PASSWORD} -l APC
 upscmd -u admin -p ${ADMIN_PASSWORD} APC test.panel.start 
