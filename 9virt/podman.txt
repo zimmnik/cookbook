@@ -70,6 +70,7 @@ sudo docker play kube --down pod.yml
 k create deployment xxx --dry-run=client --image=nginx -o yaml | less
 
 ########################################################################
+# https://www.redhat.com/sysadmin/podman-inside-container
 docker run -it --rm --name demo -v /run/podman/podman.sock:/var/run/docker.sock --privileged almalinux:8
 yum -y install podman-remote
 podman-remote system connection add local --default unix://var/run/docker.sock
