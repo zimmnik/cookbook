@@ -110,3 +110,7 @@ VIRTNETWORKD_ARGS=
 EOF
 sudo systemctl enable virtnetworkd.service
 sudo systemctl restart virtnetworkd.service
+
+#---------------------------------------------------------
+docker run -it --rm --name demo -v /var/run/libvirt/:/var/run/libvirt/ --privileged almalinux:8
+yum -y install libvirt-client && virsh nodeinfo
