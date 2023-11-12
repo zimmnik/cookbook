@@ -11,6 +11,7 @@ update && reboot
   dnf system-upgrade reboot
 
   remove useless rhel kernel?
+  efibootmgr
 
 accounts + ssh(passwords and keys)
 network
