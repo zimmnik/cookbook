@@ -3,22 +3,27 @@ DISK2="/dev/disk/by-id/ata-NT-1TB_0022740000053"
 
 mdadm --stop /dev/md/efi && mdadm --stop /dev/md/boot
 mdadm --zero-superblock ${DISK1}-part1 ${DISK2}-part1
+mdadm --zero-superblock ${DISK1}-part2 ${DISK2}-part2
+wipefs -ab ${DISK1}-part2 && wipefs -ab ${DISK2}-part2
+wipefs -ab ${DISK1}-part1 && wipefs -ab ${DISK2}-part1
 wipefs -ab ${DISK1} && wipefs -ab ${DISK2}
 lsblk -f
 
 parted ${DISK1} \
+  unit MiB \
   mklabel gpt \
-  mkpart "'EFI System Partition'" 0% 256MiB \
+  mkpart "'EFI System Partition'" 0% 256 \
   set 1 raid on \
-  mkpart BOOT 256MiB 768MiB \
+  mkpart BOOT 256 768 \
   set 2 raid on \
   print free
-  
+
 parted ${DISK2} \
+  unit MiB \
   mklabel gpt \
-  mkpart "'EFI System Partition'" 0% 256MiB \
+  mkpart "'EFI System Partition'" 0% 256 \
   set 1 raid on \
-  mkpart BOOT 256MiB 768MiB \
+  mkpart BOOT 256 768 \
   set 2 raid on \
   print free
 
