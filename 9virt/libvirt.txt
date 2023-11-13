@@ -12,6 +12,9 @@ sudo yum -y install @virtualization
 sudo usermod -aG libvirt zorg
 sudo systemctl enable libvirtd --now
 
+virsh -c qemu:///session list --all
+virsh -c qemu:///system list --all
+
 mkdir -p ~/.config/libvirt/ && echo 'uri_default = "qemu:///system"' > ~/.config/libvirt/libvirt.conf
 
 #ORACLE LINUX SERVER
