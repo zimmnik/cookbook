@@ -21,3 +21,5 @@ k --namespace $NAMESPACE create clusterrolebinding $SA_NAME --serviceaccount=$NA
 k --namespace $NAMESPACE create rolebinding $SA_NAME-$ROLE --serviceaccount=$NAMESPACE:$SA_NAME --clusterrole=$ROLE 
 SECRET=$(k -n $NAMESPACE get secrets | tail -n +2 | grep $SA_NAME | awk '{print $1}')
 k --namespace $NAMESPACE get secret $SECRET -o jsonpath="{.data.token}" | base64 --decode
+
+k --as=dex:Someuser --as-group=dex:dbp_write delete -f https://raw.githubusercontent.com/apache/flink-kubernetes-operator/release-1.6/examples/basic.yaml
