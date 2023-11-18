@@ -1,7 +1,7 @@
 https://github.com/gsauthof/dracut-sshd#readme
 https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/issues/685
 
-yum -y install kernel-uek-$(uname -r)
+yum -y install tar dracut-network
 curl -LO https://github.com/gsauthof/dracut-sshd/archive/refs/tags/0.6.6.tar.gz
 tar -zxvf 0.6.6.tar.gz 
 cp -ri dracut-sshd-0.6.6/46sshd/ /usr/lib/dracut/modules.d/
@@ -10,5 +10,4 @@ dracut --list-modules | grep ssh
 cat /root/.ssh/authorized_keys
 dracut -f -v
 lsinitrd | grep 'authorized\|bin/sshd'
-grubby --update-kernel=ALL --args="rd.neednet=1 "
-#grubby --update-kernel=ALL --args="rd.neednet=1 ifname=bootnet:a0:b3:cc:df:10:4b ip=192.168.10.251::192.168.10.1:255.255.255.0:bro:bootnet:off:192.168.10.251 nameserver=192.168.10.1"
+grubby --update-kernel=ALL --args="rd.neednet=1 ifname=bootnet:a0:b3:cc:df:10:4b ip=192.168.10.251::192.168.10.1:255.255.255.0:bro:bootnet:off:192.168.10.251 nameserver=192.168.10.1"
