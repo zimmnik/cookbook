@@ -32,17 +32,17 @@ chmod 600 /etc/postfix/generic
 postmap /etc/postfix/generic
 
 # MAIN
-sudo sed -i '/^smtp_tls_security_level/d' /etc/postfix/main.cf
+#sudo sed -i '/^smtp_tls_security_level/d' /etc/postfix/main.cf
 cat <<EOF >> /etc/postfix/main.cf
 
 relayhost = ${SMTPHOST}
 smtp_generic_maps = regexp:/etc/postfix/generic
 smtp_use_tls = yes
+#smtp_tls_wrappermode = yes
+#smtp_tls_security_level = encrypt
 smtp_sasl_auth_enable = yes
 smtp_sasl_security_options =
 smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
-smtp_tls_wrappermode = yes
-smtp_tls_security_level = encrypt
 EOF
 systemctl enable postfix --now
 #sleep 2 && journalctl -u postfix
