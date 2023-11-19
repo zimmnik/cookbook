@@ -34,5 +34,5 @@ systemctl enable nut-monitor --now
 sleep 2 && journalctl -u nut*
 
 #TEST
-upscmd -u observer_s -p ${OBSERVER_S_PASSWORD} -l APC
-upscmd -u observer_s -p ${OBSERVER_S_PASSWORD} APC test.panel.start 
+upscmd -u observer_s -p ${OBSERVER_S_PASSWORD} -l APC@${NUT_HOST}
+upsc APC@${NUT_HOST}
