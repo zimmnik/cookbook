@@ -27,7 +27,7 @@ ntp
   
 locale
   timedatectl set-timezone Europe/Moscow && timedatectl
-  yum -y install glibc-langpack-ru
+  yum -y install glibc-langpack-ru glibc-langpack-en
   localectl set-locale LANG="ru_RU.UTF-8"
   localectl set-locale LC_MESSAGES="en_US.UTF-8"
   localectl
