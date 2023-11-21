@@ -24,3 +24,9 @@ e2fsck -f /dev/sdb1
 resize2fs /dev/sdb1
 mount /dev/sdb1 && df -h
 systemctl start elasticsearch
+
+#-----------------------------------
+# xfs
+echo -e "resizepart\n1\nYes\n100%\nprint free\nquit" | parted /dev/vda ---pretend-input-tty
+xfs_growfs / -d
+df -h
