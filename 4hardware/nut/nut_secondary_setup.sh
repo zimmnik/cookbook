@@ -33,9 +33,11 @@ EOF
 mkdir -p /etc/systemd/system/nut-monitor.service.d
 cat << EOF > /etc/systemd/system/nut-monitor.service.d/override.conf 
 [Service]
+ExecStartPre=
 ExecStartPre=-/usr/bin/systemd-tmpfiles --create /usr/lib/tmpfiles.d/nut-common.conf
 
 [Install]
+WantedBy=
 WantedBy=multi-user.target
 EOF
 
