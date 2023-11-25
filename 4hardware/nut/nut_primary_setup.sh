@@ -87,8 +87,11 @@ EOF
 
 mkdir -p /etc/systemd/system/nut-monitor.service.d
 cat << EOF > /etc/systemd/system/nut-monitor.service.d/override.conf 
+cat << EOF > /etc/systemd/system/nut-monitor.service.d/override.conf 
 [Service]
+ExecStartPre=
 ExecStartPre=-/usr/bin/systemd-tmpfiles --create /usr/lib/tmpfiles.d/nut-common.conf
+EOF
 EOF
 
 systemctl enable nut.target --now
