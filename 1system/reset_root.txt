@@ -1,0 +1,8 @@
+rd.break
+Ctrl-x
+mount -oremount,rw /sysroot
+chroot /sysroot
+passwd root
+touch /.autorelabel
+exit
+exit
