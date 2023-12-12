@@ -3,7 +3,7 @@
 docker run -it --rm -p 8200:8200 docker.io/library/vault:1.13.3
 
 #start client
-docker run -it --rm --net host docker.io/library/vault:1.13.3 sh -c "apk add openssh && ash"
+docker run -it --rm --net host docker.io/library/vault:1.13.3 sh -c "apk add openssh vim && ash"
 
 # set address
 export VAULT_ADDR='http://0.0.0.0:8200'
