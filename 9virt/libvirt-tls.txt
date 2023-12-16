@@ -1,0 +1,87 @@
+#!/bin/bash
+
+# FYI https://libvirt.org/kbase/tlscerts.html
+
+# CA
+certtool --generate-privkey > cakey.pem && chmod 600 cakey.pem
+cat <<EOF > ca.info
+cn = VN Certification Authority
+ca
+cert_signing_key
+EOF
+certtool --generate-self-signed --load-privkey cakey.pem --template ca.info --outfile cacert.pem
+\rm -v ca.info
+#certtool -i --infile cacert.pem | less
+
+# SERVER
+certtool --generate-privkey > serverkey.pem && chmod 600 serverkey.pem
+cat <<EOF > server.info
+organization = VN Certification Authority
+cn = vn
+dns_name = vn
+dns_name = localhost
+ip_address = 192.168.10.252
+tls_www_server
+encryption_key
+signing_key
+EOF
+certtool --generate-certificate --load-privkey serverkey.pem \
+  --load-ca-certificate cacert.pem --load-ca-privkey cakey.pem \
+  --template server.info --outfile servercert.pem
+\rm -v server.info
+#certtool -i --infile servercert.pem
+
+# CLIENT
+certtool --generate-privkey > clientkey.pem && chmod 644 clientkey.pem
+cat <<EOF > client.info
+organization = VN Certification Authority
+cn = client
+tls_www_client
+encryption_key
+signing_key
+EOF
+certtool --generate-certificate --load-privkey clientkey.pem \
+  --load-ca-certificate cacert.pem --load-ca-privkey cakey.pem \
+  --template client.info --outfile clientcert.pem
+\rm -v client.info
+#certtool -i --infile clientcert.pem
+
+# INSTALL SERVER
+mkdir -p /etc/pki/CA/
+mv -v cacert.pem /etc/pki/CA/cacert.pem
+\rm -v cakey.pem
+
+mkdir -p /etc/pki/libvirt/private/
+mv -v servercert.pem /etc/pki/libvirt/servercert.pem
+mv -v serverkey.pem /etc/pki/libvirt/private/serverkey.pem
+
+# INSTALL CLIENT
+mkdir -p /etc/pki/CA/
+mv -v cacert.pem /etc/pki/CA/cacert.pem
+
+mkdir -p /etc/pki/libvirt/private/
+mv -v clientcert.pem /etc/pki/libvirt/clientcert.pem
+mv -v clientkey.pem /etc/pki/libvirt/private/clientkey.pem
+
+# TEST
+virt-pki-validate
+#read -p "Press any key to resume ..."
+
+# APPLY
+systemctl start libvirtd-tls.socket
+systemctl restart libvirtd
+sleep 5
+systemctl --no-pager status libvirtd
+
+# CONNECT
+virsh -c qemu+tls://localhost/system version
+
+# WAREHOUSE
+mkdir ssl
+mv -v /etc/pki/CA/cacert.pem ssl/cacert.pem
+mv -v /etc/pki/libvirt/clientcert.pem ssl/clientcert.pem
+mv -v /etc/pki/libvirt/private/clientkey.pem ssl/clientkey.pem
+
+docker run -it --rm -v ${PWD}/ssl:/opt:Z almalinux:8
+yum -y install libvirt-client
+virsh -c qemu+tls://192.168.10.252/system?pkipath=/opt version
