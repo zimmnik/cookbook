@@ -77,11 +77,11 @@ systemctl --no-pager status libvirtd
 virsh -c qemu+tls://localhost/system version
 
 # WAREHOUSE
-mkdir ssl
-mv -v /etc/pki/CA/cacert.pem ssl/cacert.pem
-mv -v /etc/pki/libvirt/clientcert.pem ssl/clientcert.pem
-mv -v /etc/pki/libvirt/private/clientkey.pem ssl/clientkey.pem
-
-docker run -it --rm -v ${PWD}/ssl:/opt:Z almalinux:8
-yum -y install libvirt-client
-virsh -c qemu+tls://192.168.10.252/system?pkipath=/opt version
+#mkdir ssl
+#mv -v /etc/pki/CA/cacert.pem ssl/cacert.pem
+#mv -v /etc/pki/libvirt/clientcert.pem ssl/clientcert.pem
+#mv -v /etc/pki/libvirt/private/clientkey.pem ssl/clientkey.pem
+#
+#docker run -it --rm -v ${PWD}/ssl:/opt:Z almalinux:8
+#yum -y install libvirt-client
+#virsh -c qemu+tls://192.168.10.252/system?pkipath=/opt version
