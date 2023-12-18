@@ -25,3 +25,11 @@ openssl x509 -CA mos_local_root_CA.crt -CAkey mos_local_root_CA.key -CAcreateser
 -req -sha256 -in wild_mos_local.csr -days 3560 -copy_extensions=copyall -out wild_mos_local.crt
 openssl x509 -in wild_mos_local.crt -noout -text
 \rm -v wild_mos_local.csr
+
+#----------------------------------------------------------------------------------------------------------------------------
+# INSTALL SELF SIGNED CA
+cp blahblahCA.crt /etc/pki/ca-trust/source/anchors/blahblahCA.crt
+update-ca-trust
+
+
+
