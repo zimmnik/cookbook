@@ -109,3 +109,11 @@ git rm -f path/to/submodule
 #------------------------------------------------------------------------------------
 # clean uncommitted changes
 git stash -u && git stash drop
+
+#------------------------------------------------------------------------------------
+# compare files between branches
+git diff dev fintech-dev --name-only
+git diff dev fintech-dev -- packer/main.pkr.hcl
+
+# merge file from another branch to current
+git checkout fintech-dev -- .gitlab-ci.yml
