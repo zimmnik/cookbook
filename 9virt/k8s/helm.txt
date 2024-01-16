@@ -3,33 +3,14 @@ https://helm.sh/docs/topics/version_skew/
 https://helm.sh/docs/intro/install/
 https://github.com/helm/helm/releases
 
-curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 && chmod 700 get_helm.sh && less get_helm.sh
-./get_helm.sh --version v3.6.3
-
-helm list --all-namespaces
-
-helm repo update && helm search repo -l stable/external-dns | less
-helm show values influxdata/telegraf > values-orig.yaml
-helm search repo --regexp influxdata/* -l | less
- 
-helm delete victoria-metrics-agent --wait -n terra-monitoring
-helm upgrade --install victoria-metrics-agent vm/victoria-metrics-agent -f /tmp/ansible_configs/vmagent/values.yml -n terra-monitoring
-
-helm install prometheus stable/prometheus --version 9.3.1 \
---namespace logging  --set \
-server.ingress.enabled=true,\
-server.ingress.hosts[0]=prometheus.10.100.1.13.nip.io,\
-alertmanager.persistentVolume.enabled=true,\
-alertmanager.persistentVolume.storageClass=nfs-client,\
-alertmanager.persistentVolume.size=10Gi,\
-server.persistentVolume.enabled=true,\
-server.persistentVolume.storageClass=nfs-client,\
-server.persistentVolume.size=10Gi,\
-nodeExporter.tolerations[0].key=node-role.kubernetes.io/master,\
-nodeExporter.tolerations[0].effect=NoSchedule
-
-helm repo update && helm search -l stable/prometheus
-
-helm upgrade external-dns stable/external-dns --reuse-values --dry-run --debug --disable-openapi-validation --generate-name | less
-helm upgrade stable/prometheus stable/prometheus --version 9.3.1 --namespace=logging --reuse-values --recreate-pods --wait --set server.baseURL=http://prometheus.1.1.1.154.nip.io
-helm upgrade fluent-bit stable/fluent-bit --version 2.8.0 --reuse-values --recreate-pods --wait --set backend.es.host=1.1.1.91
+helm repo list
+helm list -A
+helm repo add gitlab https://nexus.local/repository/common-proxy-helm-charts-gitlab-io/
+helm repo update gitlab
+helm search repo -l gitlab/gitlab-runner 
+helm show values gitlab/gitlab-runner --version 0.52.1 > gitlab-runner.yml
+helm upgrade --install --create-namespace --namespace gitlab-runner gitlab-runner -f gitlab-runner.yml gitlab/gitlab-runner --version 0.52.1  --dry-run --debug | less -R  
+helm get manifest gitlab-runner | less
+helm get gitlab-runner | less
+helm uninstall gitlab-runner
+k delete ns gitlab-runner
