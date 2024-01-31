@@ -1,0 +1,34 @@
+# podman check
+podman -v
+docker run quay.io/podman/hello
+
+# rootful variant
+sudo systemctl enable --now podman.socket
+sudo systemctl status podman.socket
+sudo curl -w "\n" -H "Content-Type: application/json" --unix-socket /var/run/docker.sock http://localhost/_ping
+
+# or rootless variant
+systemctl --user enable --now podman.socket
+systemctl --user status podman.socket
+curl -w "\n" -H "Content-Type: application/json" --unix-socket $XDG_RUNTIME_DIR/podman/podman.sock http://localhost/_ping
+export DOCKER_HOST="unix://$XDG_RUNTIME_DIR/podman/podman.sock"
+
+# rootful installation
+sudo curl -SL https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose 
+docker-compose version
+
+# rootless installation
+curl -SL https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-linux-x86_64 -o $HOME/.local/bin/docker-compose
+chmod +x $HOME/.local/bin/docker-compose
+docker-compose version
+
+# sample project
+git clone https://github.com/docker/awesome-compose.git 
+cd awesome-compose/apache-php/ && tree
+sed -i "s/'80:80'/'8080:80'/g" compose.yaml 
+sed -i "s%/var/www/html/%/var/www/html/:Z%g" compose.yaml 
+docker-compose up
+curl http://localhost:8080
+docker-compose down
+
