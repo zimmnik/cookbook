@@ -31,5 +31,11 @@ openssl x509 -in wild_mos_local.crt -noout -text
 cp blahblahCA.crt /etc/pki/ca-trust/source/anchors/blahblahCA.crt
 update-ca-trust
 
+#----------------------------------------------------------------------------------------------------------------------------
+# EXTRACT CERT FROM JKS KEYSTORE
+keytool -v -keystore keystore.jks -storepass blahblah -list
+keytool -exportcert -keystore keystore.jks -alias somecertname -file cert.der
+openssl x509 -inform DER -in cert.der -out cert.pem
+
 
 
