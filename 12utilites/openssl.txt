@@ -33,9 +33,15 @@ update-ca-trust
 
 #----------------------------------------------------------------------------------------------------------------------------
 # EXTRACT CERT FROM JKS KEYSTORE
-keytool -v -keystore keystore.jks -storepass blahblah -list
-keytool -exportcert -keystore keystore.jks -alias somecertname -file cert.der
+keytool -list -keystore keystore.jks -storepass blahblah 
+keytool -exportcert -keystore keystore.jks -storepass blahblah -alias somecertname -file cert.der
 openssl x509 -inform DER -in cert.der -out cert.pem
+
+#----------------------------------------------------------------------------------------------------------------------------
+# ADD CERT TO JKS KEYSTORE
+openssl x509 -inform pem -in cert.pem -outform der -out cert.der                             
+keytool -importcert -keystore keystore.jks -alias somecertname -storepass blahblah -file cert.der
+keytool -list -keystore keystore.jks -storepass blahblah 
 
 
 
