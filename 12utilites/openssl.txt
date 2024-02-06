@@ -28,7 +28,7 @@ openssl x509 -in wild_mos_local.crt -noout -text
 
 #----------------------------------------------------------------------------------------------------------------------------
 # INSTALL SELF SIGNED CA
-cp blahblahCA.crt /etc/pki/ca-trust/source/anchors/blahblahCA.crt
+cp mos_local_root_CA.crt /etc/pki/ca-trust/source/anchors/blahblahCA.crt
 update-ca-trust
 
 #----------------------------------------------------------------------------------------------------------------------------
