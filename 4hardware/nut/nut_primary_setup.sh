@@ -69,6 +69,7 @@ chmod +x /usr/local/bin/nut_notify.sh
 cat << EOF > /etc/ups/upsmon.conf
 MINSUPPLIES 1
 SHUTDOWNCMD "shutdown now"
+#POLLFAIL_LOG_THROTTLE_MAX 0
 #POWERDOWNFLAG /etc/killpower
 FINALDELAY 20
 MONITOR APC@localhost 1 observer_p ${OBSERVER_P_PASSWORD} primary
