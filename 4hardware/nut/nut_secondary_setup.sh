@@ -24,6 +24,7 @@ cat << EOF > /etc/ups/upsmon.conf
 MINSUPPLIES 1
 SHUTDOWNCMD "shutdown now"
 #POWERDOWNFLAG /etc/killpower
+#POLLFAIL_LOG_THROTTLE_MAX 0
 MONITOR APC@${NUT_HOST} 1 observer_s ${OBSERVER_S_PASSWORD} secondary
 NOTIFYCMD "/usr/local/bin/nut_notify.sh"
 NOTIFYFLAG SHUTDOWN     EXEC+SYSLOG
