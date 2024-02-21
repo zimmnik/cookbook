@@ -1,3 +1,5 @@
+------------------------------
+#Almalinux 8
 rd.break
 Ctrl-x
 mount -oremount,rw /sysroot
@@ -6,3 +8,11 @@ passwd root
 touch /.autorelabel
 exit
 exit
+------------------------------
+#Ubuntu 22.04
+hold Shift to activate grub menu
+rw init=/bin/bash
+Ctrl-x
+mount | grep -w /
+passwd root
+exec /sbin/init
