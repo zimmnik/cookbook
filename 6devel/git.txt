@@ -11,6 +11,9 @@ git config --global alias.bu "remote update origin --prune" && \
 git config --global pull.ff only
 git config --global push.autoSetupRemote True
 
+git config --global user.signingkey 4C08600FE69F7C2C
+git config --global commit.gpgsign true
+git config --global gpg.program "/usr/bin/gpg"
 #------------------------------------------------------------------------------------
 # Create repo and push to gitlab
 git init && echo reponame > README.md && git add . && git commit -m "Initial commit"
