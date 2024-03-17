@@ -54,7 +54,7 @@ mkfs.vfat -F 32 ${DISK_EFI} && mount ${DISK_EFI} /mnt/restore/boot/efi/
 gpg -d --pinentry-mode loopback -o - efi-2022-05-30-2054665304.tar.zst.gpg | zstdmt -d | tar -C /mnt/restore -xvf -
 
 \cp --remove-destination /etc/resolv.conf /mnt/restore/etc/
-for i in {dev,sys,proc}; do mount -o bind /$i /mnt/restore/$i; done
+for i in {dev,sys,proc,sys/firmware/efi/efivars}; do mount -o bind /$i /mnt/restore/$i; done
 chroot /mnt/restore/ /bin/bash
 
 mdadm --detail --scan --verbose | awk '/ARRAY/ {print}' >> /etc/mdadm.conf
