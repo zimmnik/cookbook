@@ -21,3 +21,4 @@ spec:
     secretName: ingress-tls
 EOF
 k apply -f ingress.yaml
+k get secrets ingress-tls -o json | jq -r '.data."tls.crt"' | base64 -d
