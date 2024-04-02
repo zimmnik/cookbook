@@ -1,5 +1,9 @@
 curl -LO https://dlcdn.apache.org/directory/studio/2.0.0.v20210717-M17/ApacheDirectoryStudio-2.0.0.v20210717-M17-linux.gtk.x86_64.tar.gz
+tar -xzvf ApacheDirectoryStudio-2.0.0.v20210717-M17-linux.gtk.x86_64.tar.gz 
+rm ApacheDirectoryStudio-2.0.0.v20210717-M17-linux.gtk.x86_64.tar.gz 
+
 sudo yum -y install java-latest-openjdk
+#sudo apt -y install default-jre
 
 cat << 'EOF' >> ~/.local/share/applications/ApacheDirectoryStudio.desktop
 [Desktop Entry]
