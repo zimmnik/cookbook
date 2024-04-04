@@ -68,10 +68,11 @@ virt-pki-validate
 #read -p "Press any key to resume ..."
 
 # APPLY
-systemctl start libvirtd-tls.socket
-systemctl restart libvirtd
-sleep 5
+systemctl enable libvirtd-tls.socket --now
 systemctl --no-pager status libvirtd
+
+firewall-cmd --add-service=libvirt-tls --permanent 
+firewall-cmd --reload
 
 # CONNECT
 virsh -c qemu+tls://localhost/system version
