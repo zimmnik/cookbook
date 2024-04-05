@@ -1,0 +1,72 @@
+#/bin/bash
+
+set -o pipefail
+set -o errexit
+set -o nounset
+# set -o xtrace
+
+MAX_THREADS=$(nproc)
+LOCKS=()
+
+# ------------------------------------------------
+# FUNC
+create_locks () {
+  LOCKDIR=$(mktemp -d --suffix=-glabrestore)
+  for ((i=0; i<MAX_THREADS; i++)); do
+    LOCKFILE=$(mktemp -p "${LOCKDIR}" --suffix=-TH$i)
+    LOCKS+=($LOCKFILE)
+  done
+}
+
+get_free_lock () {
+LOCK="null"
+while [ "${LOCK}" = "null" ]; do
+  for FILE in "${LOCKS[@]}"; do
+    set +o errexit
+    lslocks | grep $FILE > /dev/null 2>&1
+    case "$?" in
+    1)
+      echo ""
+      LOCK="${FILE}"
+      return 0
+      ;;
+    2)
+      echo "Error $?"
+      exit 1
+      ;;
+    esac
+    set -o errexit
+  done
+  echo -n .
+  sleep 1
+done
+}
+
+runner () {
+    local -r NUM=$1
+    local -r LK=$2
+    echo "PS $NUM started"
+    flock "${LK}" sleep 10 & 
+}
+# ------------------------------------------------
+# MAIN
+
+create_locks
+
+#flock --verbose ${LOCKS[0]} sleep 10 & 
+#flock --verbose ${LOCKS[1]} sleep 10 & 
+# for FILE in "${LOCKS[@]}"; do
+#   flock --verbose "${FILE}" sleep 10 & 
+# done
+# 
+# for FILE in "${LOCKS[@]}"; do
+#   lslocks | grep $FILE > /dev/null && echo "$(basename $FILE) BUSY" || echo "$(basename $FILE) FREE"
+# done
+
+NUM_THREADS=50
+for ((i=0; i<NUM_THREADS; i++)); do
+    get_free_lock
+    runner "${i}" "${LOCK}"
+done
+
+rm -rf ${LOCKDIR}
