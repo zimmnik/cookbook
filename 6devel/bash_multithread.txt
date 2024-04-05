@@ -10,6 +10,14 @@ LOCKS=()
 
 # ------------------------------------------------
 # FUNC
+runner () {
+    local -r NUM=$1
+    local -r LK=$2
+    echo "PS $NUM started"
+    # flock "${LK}" sleep 10 & 
+    flock "${LK}" sleep $((1 + $RANDOM % 50)) & 
+}
+
 create_locks () {
   LOCKDIR=$(mktemp -d --suffix=-glabrestore)
   for ((i=0; i<MAX_THREADS; i++)); do
@@ -20,34 +28,21 @@ create_locks () {
 
 get_free_lock () {
 LOCK="null"
-while [ "${LOCK}" = "null" ]; do
+while [[ "${LOCK}" = "null" ]]; do
   for FILE in "${LOCKS[@]}"; do
-    set +o errexit
-    lslocks | grep $FILE > /dev/null 2>&1
-    case "$?" in
-    1)
-      echo ""
+    # set +o errexit
+    # lslocks | grep $FILE > /dev/null 2>&1
+    if flock --nonblock $FILE echo; then
       LOCK="${FILE}"
       return 0
-      ;;
-    2)
-      echo "Error $?"
-      exit 1
-      ;;
-    esac
-    set -o errexit
+    fi
+    # set -o errexit
   done
   echo -n .
   sleep 1
 done
 }
 
-runner () {
-    local -r NUM=$1
-    local -r LK=$2
-    echo "PS $NUM started"
-    flock "${LK}" sleep 10 & 
-}
 # ------------------------------------------------
 # MAIN
 
