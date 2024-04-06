@@ -26,7 +26,7 @@ RUN yum clean all
 CMD ["/usr/sbin/init"]
 
 ########################################################################
-#CNI MACVLAN
+# MACVLAN CNI - old way
 sudo yum -y install containernetworking-plugins
 
 #OL9 FIX
@@ -41,8 +41,12 @@ cat << EOF | sudo tee -a /etc/containers/containers.conf
 [network]
 network_backend = "cni"
 EOF
-sudo docker network create -d macvlan -o parent=eno1.4 cHOME ?? sudo docker network ls
-sudo docker build -t alpine-samba . 
+
+# MACVLAN NETAVALK v1.7+ - new way
+systemctl enable netavark-dhcp-proxy.service --now
+
+# MACVLAN CONTAINER START
+sudo docker network create -d macvlan -o parent=eno1.4 cHOME && sudo docker network ls
 sudo podman run -it --rm --name nginxtest --network cHOME --mac-address=92:d0:c6:0b:29:33 --hostname=nginxtest nginx
 
 ########################################################################
