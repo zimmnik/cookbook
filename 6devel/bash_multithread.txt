@@ -1,5 +1,7 @@
 #/bin/bash
 
+# FYI https://www.squash.io/exploring-multithreading-in-bash-scripts-on-linux/
+
 set -o pipefail
 set -o errexit
 set -o nounset
