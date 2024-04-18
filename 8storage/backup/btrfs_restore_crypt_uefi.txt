@@ -1,4 +1,9 @@
 #systemd.unit=multi-user.target console=ttyS0 selinux=0
+#UBUNTU
+#apt-get -y install xterm && eval $(resize)
+#FEDORA
+#yum -y install xterm-resize && eval $(resize)
+#ORACLE
 #yum -y install xterm && eval $(resize)
 
 BOOT TO EFI MODE
@@ -61,11 +66,13 @@ chroot /mnt/restore/ /bin/bash
 mdadm --detail --scan --verbose | awk '/ARRAY/ {print}' >> /etc/mdadm.conf
 
 touch /.autorelabel
+# IF MIGRATE FROM AMD TO INTEL
+mv /etc/X11/xorg.conf.d/20-amdgpu.conf /etc/X11/xorg.conf.d/20-amdgpu.conf.disabled
+
+# IF CLONE SYSTEM
 \rm -v /etc/ssh/ssh_host_*
 echo > /etc/machine-id
 btrfs fi label / NEWNAME && btrfs fi show
-
-mv /etc/X11/xorg.conf.d/20-amdgpu.conf /etc/X11/xorg.conf.d/20-amdgpu.conf.disabled
 
 ls /dev/disk/by-id/
 cat partition_layout-*.txt
@@ -76,36 +83,41 @@ vim /etc/fstab
 cryptsetup --version
 vim /etc/crypttab
 
-#update-initramfs -u -k all
+#UBUNTU
+update-initramfs -u -k all
+#FEDORA/ORACLE
+#dracut -v --no-hostonly -a "rescue" --force /boot/initramfs-0-rescue-0b5b35daa76047c89106db491de70957.img $(uname -r)
+#https://askbot.fedoraproject.org/en/question/40409/cant-boot-into-rescue-mode-how-to-re-generate-initramfs/
 dracut --regenerate-all --force
 
-https://mirrors.edge.kernel.org/pub/linux/utils/boot/dracut/dracut.html#_crypto_luks
+#UBUNTU
+\rm -v /boot/efi/EFI/ubuntu/grub.cfg; \rm -v /boot/grub/grub.cfg
+lsblk
+update-grub
+
+#FEDORA/ORACLE
+#https://mirrors.edge.kernel.org/pub/linux/utils/boot/dracut/dracut.html#_crypto_luks
+#https://fedoraproject.org/wiki/GRUB_2#Instructions_for_UEFI-based_systems
+#https://bugzilla.redhat.com/show_bug.cgi?id=1917213
 vim /etc/default/grub
 grub2-mkconfig --output=/boot/grub2/grub.cfg
 
-#\rm -v /boot/efi/EFI/ubuntu/grub.cfg; \rm -v /boot/grub/grub.cfg
-#lsblk
-#update-grub
+#FEDORA
+\rm -v /boot/efi/EFI/fedora/grub.cfg
+#ORACLE
+\rm -v /boot/efi/EFI/redhat/grub.cfg
+#UBUNTU
+\rm -v /boot/efi/EFI/ubuntu/grub.cfg
 
-#https://fedoraproject.org/wiki/GRUB_2#Instructions_for_UEFI-based_systems
-#https://bugzilla.redhat.com/show_bug.cgi?id=1917213
-\rm -v /boot/efi/EFI/fedora/grub.cfg; \rm -v /boot/grub2/grub.cfg
+\rm -v /boot/grub2/grub.cfg
 yum -y upgrade shim-* grub2-efi-* grub2-common
 yum -y reinstall shim-* grub2-efi-* grub2-common
 
-umount /mnt/backup
-#UNPLUG  
-
+logout 
 reboot
 
-vim /usr/local/bin/backupdate.shd
-btrfs subvolume create /.sv/previous_nightly
-btrfs subvolume create /.sv/latest_nightly
-btrfs subvolume create /.sv/previous_weekend
-btrfs subvolume create /.sv/latest_weekend
 
+# IF CLONE SYSTEM
 vim /etc/smartmontools/smartd.conf
 hostnamectl set-hostname NEWNAME && hostnamectl
 
-#dracut -v --no-hostonly -a "rescue" --force /boot/initramfs-0-rescue-0b5b35daa76047c89106db491de70957.img $(uname -r)
-#https://askbot.fedoraproject.org/en/question/40409/cant-boot-into-rescue-mode-how-to-re-generate-initramfs/
