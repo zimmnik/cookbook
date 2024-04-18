@@ -47,8 +47,8 @@ mkdir /mnt/restore
 mount -o compress=zstd:1 "/dev/mapper/luks-$(cryptsetup luksUUID ${DISK_ROOT})" /mnt/restore/
 btrfs su list -t /mnt/restore/
 gpg -d --quiet --pinentry-mode loopback -o - root-2022-05-30-2054665304.btrfs.zst.gpg | zstdmt -d | btrfs receive -v /mnt/restore/ && btrfs su list -t /mnt/restore/
-btrfs su snapshot /mnt/restore/latest_weekend/ /mnt/restore/root && btrfs su list -t /mnt/restore 
-btrfs su delete /mnt/restore/latest_weekend/ && btrfs su list -t /mnt/restore 
+btrfs su snapshot /mnt/restore/system_latest/ /mnt/restore/root && btrfs su list -t /mnt/restore 
+btrfs su delete /mnt/restore/system_latest/ && btrfs su list -t /mnt/restore 
 umount /mnt/restore
 mount -o compress=zstd:1,subvol=root "/dev/mapper/luks-$(cryptsetup luksUUID ${DISK_ROOT})" /mnt/restore/
 
