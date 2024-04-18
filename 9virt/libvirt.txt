@@ -120,7 +120,7 @@ yum -y install libvirt-client && virsh nodeinfo
 
 #---------------------------------------------------------
 # quick one-time console fedora start
-virt-install --osinfo linux2022 --graphics none --disk none \
+virt-install --osinfo linux2022  --boot uefi --graphics none --disk none \
 --location Fedora-Workstation-Live-x86_64-38-1.6.iso \
 --extra-args "console=ttyS0 root=live:CDLABEL=Fedora-WS-Live-38-1-6 rd.live.image systemd.unit=multi-user.target" \
 --transient
