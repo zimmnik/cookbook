@@ -72,15 +72,23 @@ dmsetup ls --target crypt
 blkid
 vim /etc/fstab
 
+cryptsetup --version
 vim /etc/crypttab
+
+#update-initramfs -u -k all
 dracut --regenerate-all --force
 
 https://mirrors.edge.kernel.org/pub/linux/utils/boot/dracut/dracut.html#_crypto_luks
 vim /etc/default/grub
+grub2-mkconfig --output=/boot/grub2/grub.cfg
+
+#\rm -v /boot/efi/EFI/ubuntu/grub.cfg; \rm -v /boot/grub/grub.cfg
+#lsblk
+#update-grub
 
 #https://fedoraproject.org/wiki/GRUB_2#Instructions_for_UEFI-based_systems
 #https://bugzilla.redhat.com/show_bug.cgi?id=1917213
-\rm -v /boot/efi/EFI/fedora/grub.cfg && \rm -v /boot/grub2/grub.cfg
+\rm -v /boot/efi/EFI/fedora/grub.cfg; \rm -v /boot/grub2/grub.cfg
 yum -y upgrade shim-* grub2-efi-* grub2-common
 yum -y reinstall shim-* grub2-efi-* grub2-common
 
@@ -89,7 +97,7 @@ umount /mnt/backup
 
 reboot
 
-vim /usr/local/bin/backupdate.sh
+vim /usr/local/bin/backupdate.shd
 btrfs subvolume create /.sv/previous_nightly
 btrfs subvolume create /.sv/latest_nightly
 btrfs subvolume create /.sv/previous_weekend
