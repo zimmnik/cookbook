@@ -100,7 +100,15 @@ update-grub
 #https://fedoraproject.org/wiki/GRUB_2#Instructions_for_UEFI-based_systems
 #https://bugzilla.redhat.com/show_bug.cgi?id=1917213
 vim /etc/default/grub
-grub2-mkconfig --output=/boot/grub2/grub.cfg
+grub2-mkconfig -o /boot/grub2/grub.cfg --update-bls-cmdline
+cat /boot/loader/entries/*.x86_64.conf
+
+# LOW LEVEL BLS ENTRIES SETUP 
+#grep BLSCFG /etc/default/grub
+#cat /boot/loader/entries/*.x86_64.conf
+#vim /etc/kernel/cmdline
+#\rm -v /boot/loader/entries/*.x86_64.conf
+#time for v in /usr/lib/modules/*/vmlinuz; do kernel-install add $(basename $(dirname $v)) $v; done
 
 #FEDORA
 \rm -v /boot/efi/EFI/fedora/grub.cfg
@@ -115,7 +123,6 @@ yum -y reinstall shim-* grub2-efi-* grub2-common
 
 logout 
 reboot
-
 
 # IF CLONE SYSTEM
 vim /etc/smartmontools/smartd.conf
