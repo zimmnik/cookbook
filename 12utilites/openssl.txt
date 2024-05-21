@@ -10,21 +10,21 @@ echo | openssl s_client -showcerts -connect gitlab.mos.local:443 | openssl x509 
 #SELF SIGNED WILDCARD CERT WITH CA (OpenSSL 3.0.1 14 Dec 2021 (Library: OpenSSL 3.0.1 14 Dec 2021))
 
 # create certificate authority
-openssl req -newkey rsa:2048 -noenc -keyout mos_local_root_CA.key \
--x509 -sha256 -days 3560 -subj "/C=RU/ST=Moscow/L=Moscow/O=Zimmnik Private Certification Services/OU=Main/CN=Mnevniki Certification Authority/emailAddress=admin@zimmnik.ru" -out mos_local_root_CA.crt
-openssl x509 -in mos_local_root_CA.crt -noout -text
+openssl req -newkey rsa:2048 -noenc -keyout CA.key \
+-x509 -sha256 -days 3560 -subj "/C=RU/O=Private/CN=Zimmnik Certification Authority" -out CA.crt
+openssl x509 -in CA.crt -noout -text | less
 
 # create certificate signing request
-openssl req -newkey rsa:2048 -noenc -keyout wild_mos_local.key \
--subj "/C=RU/ST=Moscow/L=Moscow/O=Private/OU=Main/CN=mos.local/emailAddress=admin@zimmnik.ru" \
--addext "subjectAltName=DNS:*.mos.local" -new -sha256 -out wild_mos_local.csr
-openssl req -in wild_mos_local.csr -text -verify -noout
+openssl req -newkey rsa:2048 -noenc -keyout cert.key \
+-subj "/C=RU/O=Private/CN=zimmnik.ru" \
+-addext "subjectAltName=DNS:localhost,DNS:zimmnik.ru,DNS:*.zimmnik.ru" -new -sha256 -out cert.csr
+openssl req -in cert.csr -text -verify -noout | less
 
 # create certificate from signing request
-openssl x509 -CA mos_local_root_CA.crt -CAkey mos_local_root_CA.key -CAcreateserial \
--req -sha256 -in wild_mos_local.csr -days 3560 -copy_extensions=copyall -out wild_mos_local.crt
-openssl x509 -in wild_mos_local.crt -noout -text
-\rm -v wild_mos_local.csr
+openssl x509 -CA CA.crt -CAkey CA.key -CAcreateserial \
+-req -sha256 -in cert.csr -days 3560 -copy_extensions=copyall -out cert.crt
+openssl x509 -in cert.crt -noout -text | less
+\rm -v cert.csr
 
 #----------------------------------------------------------------------------------------------------------------------------
 # INSTALL SELF SIGNED CA
