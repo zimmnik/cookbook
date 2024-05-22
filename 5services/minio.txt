@@ -1,0 +1,9 @@
+micli alias list
+micli alias remove gcs
+micli alias remove local
+micli alias remove play
+micli alias remove s3
+
+micli alias set fepreprod https://name.domain:2443 ACCESSKEY SECRETKEY --api "S3v2"
+micli admin info fepreprod
+micli ls fepreprod
