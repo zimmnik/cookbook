@@ -1,2 +1,6 @@
 tar --selinux --one-file-system -cf - -C / etc | zstd -z --quiet - | gpg -c --pinentry-mode loopback --compress-algo none -o "etc.tar.zst.gpg"
 gpg -d --pinentry-mode loopback -o - etc.tar.zst.gpg | zstdmt -d | tar -C /srv/temp -xvf -
+
+tar -cf - . | gpg -c --pinentry-mode loopback --passphrase-file PASSPHRASE -o - | ssh -p 2222 user@host 'cat - > /srv/data/backup.tar.gpg'
+cd ../Desktop/temp/
+ssh -p 2222 zorg@192.168.10.251 'cat /srv/data/backup.tar.gpg' | gpg -d --pinentry-mode loopback --passphrase-file ~/Documents/PASSPHRASE -o - | tar -C . -xvf -
