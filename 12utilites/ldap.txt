@@ -1,0 +1,3 @@
+LDAPTLS_REQCERT=never ldapsearch -H ldaps://localhost:16363 -x -D "login" -w 'password' -b "DC=example,DC=com" \
+-s sub -a never -z 0 -E pr=1000/noprompt \
+"(&(objectClass=user)(objectClass=organizationalPerson)(objectClass=person)(cn=*))" "displayName"
