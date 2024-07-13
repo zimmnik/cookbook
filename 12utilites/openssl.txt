@@ -30,6 +30,7 @@ openssl x509 -in cert.crt -noout -text | less
 # INSTALL SELF SIGNED CA
 cp mos_local_root_CA.crt /etc/pki/ca-trust/source/anchors/blahblahCA.crt
 update-ca-trust
+grep ^\# /etc/pki/tls/certs/ca-bundle.crt | sort
 
 #----------------------------------------------------------------------------------------------------------------------------
 # EXTRACT CERT FROM JKS KEYSTORE
