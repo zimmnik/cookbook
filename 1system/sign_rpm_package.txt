@@ -1,0 +1,73 @@
+# BUILD RPM PACKAGE
+# FYI
+# https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html-single/packaging_and_distributing_software/index#proc_configuring-rpm-to-sign-a-package_signing-packages
+
+#------------------------------------------------------------------------------
+# GENEREATE AND EXPORT GPG KEY
+# FYI 
+# https://docs.digicert.com/en/software-trust-manager/signing-tools/rpm-signing.html
+
+gpg --batch --gen-key <<EOF
+Key-Type: 1
+Key-Length: 2048
+Subkey-Type: 1
+Subkey-Length: 2048
+Name-Real: Blahblah Packaging Service
+Name-Email: admin@example.com
+Expire-Date: 0
+%no-protection
+EOF
+                           
+gpg --list-keys
+gpg --list-secret-keys
+
+export KEY_ID=$(gpg --list-secret-keys --with-colons | awk -F ':' '$1=="uid" {print $10; exit}')
+gpg --output private.asc --armor --export-secret-key "${KEY_ID}" && gpg --show-keys private.asc
+
+#------------------------------------------------------------------------------
+# IMPORT GPG KEY, SIGN, CHECK AND UPLOAD RPM PACKAGE
+
+gpg --import private.asc && gpg --list-secret-keys
+export KEY_ID=$(gpg --list-secret-keys --with-colons | awk -F: '$1=="uid" {print $10; exit}')
+
+dnf install -y rpm-sign
+echo "%_gpg_name ${KEY_ID}" > $HOME/.rpmmacros
+export GPG_TTY=$(tty)
+rpm --addsign x86_64/Blahblah-1.7.4-3a61fe92.el7.x86_64.rpm
+
+gpg --output public.asc --armor --export "${KEY_ID}" && gpg --show-keys public.asc
+rpm --import public.asc && rpm -q gpg-pubkey --qf '%{name}-%{version}-%{release} --> %{summary}\n'
+rpm -K x86_64/Blahblah-1.7.4-3a61fe92.el7.x86_64.rpm
+
+curl --user 'login:pass' --upload-file ./Blahblah-1.7.4-3a61fe92.el7.x86_64.rpm https://local-repo.nexus/repository/blahblah-hosted-yum-centos/centos/7.3/x86_64/extras/Blahblah/Blahblah-1.7.4-3a61fe92.el7.x86_64.rpm
+
+#------------------------------------------------------------------------------
+# INSTALL SIGNED RPM PACKAGE
+# FYI
+# https://unix.stackexchange.com/a/20226
+
+cat << 'EOF' > /etc/pki/rpm-gpg/RPM-GPG-KEY-Blahblah
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+aaa
+....
+bbb
+-----END PGP PUBLIC KEY BLOCK-----
+EOF
+
+rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-Blahblah && rpm -q gpg-pubkey --qf '%{name}-%{version}-%{release} --> %{summary}\n'
+
+source /etc/os-release
+
+cat << EOF > /etc/yum.repos.d/Blahblah.repo 
+[Blahblah]
+name=Blahblah
+baseurl=https://local-repo.nexus/repository/blahblah-hosted-yum-centos/centos/$VERSION_ID/\$basearch/extras/Blahblah
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Blahblah
+enabled=1
+EOF
+
+dnf repolist -v
+dnf search blahblah --showduplicates
+dnf install -y blahblah-1.7.4-a1626920.el7
