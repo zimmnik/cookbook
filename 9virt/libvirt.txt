@@ -1,56 +1,62 @@
-#FYI https://libvirt.org/formatnetwork.html#elementVlanTag
-#FYI https://serverfault.com/questions/1040692/tagged-vlan-on-kvm-with-macvtap-driver?noredirect=1&lq=1
-#FYI https://serverfault.com/questions/1051294/vlan-support-with-libvirt-for-linux-bridge-to-virtual-machines
+#FYI
+# https://libvirt.org/formatnetwork.html#elementVlanTag
+# https://serverfault.com/questions/1040692/tagged-vlan-on-kvm-with-macvtap-driver?noredirect=1&lq=1
+# https://serverfault.com/questions/1051294/vlan-support-with-libvirt-for-linux-bridge-to-virtual-machines
+# ls /usr/share/qemu/firmware
 
-# BUGS
-# https://discussion.fedoraproject.org/t/libvirtd-stop-responding-after-some-time/84324/3
+#-------------------------------------------------------------------------------
+# INSTALLATION
 
+# FEDORA
 yum group list --hidden -v
-
-#FEDORA DESKTOP
 sudo yum -y install @virtualization
-sudo usermod -aG libvirt zorg
 sudo systemctl enable libvirtd --now
+# ORACLE
+yum -y install qemu-kvm libvirt virt-install nc virt-top
+for drv in qemu network nodedev nwfilter secret storage interface; do systemctl start virt${drv}d{,-ro,-admin}.socket; done
 
+
+#-------------------------------------------------------------------------------
+# SETUP
+sudo usermod -aG libvirt zorg
+mkdir -p ~/.config/libvirt/ && echo 'uri_default = "qemu:///system"' > ~/.config/libvirt/libvirt.conf
+
+#-------------------------------------------------------------------------------
+# CHECK
+virt-host-validate
 virsh -c qemu:///session list --all
 virsh -c qemu:///system list --all
 
-mkdir -p ~/.config/libvirt/ && echo 'uri_default = "qemu:///system"' > ~/.config/libvirt/libvirt.conf
+#-------------------------------------------------------------------------------
+# CUSTOMIZE DISK
+virt-customize -a /var/lib/libvirt/images/imagetest1.qcow2 --hostname vm01.test.lab --root-password password:rootpw --ssh-inject 'root:file:labkey.pub' --uninstall cloud-init --selinux-relabel
 
-#ORACLE LINUX SERVER
+#-------------------------------------------------------------------------------
+# NETWORK SETUP
+virsh net-update vagrant-libvirt add dns-host '<host ip="192.168.11.11"> <hostname>blah2.laine.org</hostname> </host>' --live --config
 
-yum -y install qemu-kvm libvirt virt-install nc virt-top
-for drv in qemu network nodedev nwfilter secret storage interface; do systemctl start virt${drv}d{,-ro,-admin}.socket; done
-virt-host-validate
+#--------------------------------------------------------
+# BUGS
+# https://discussion.fedoraproject.org/t/libvirtd-stop-responding-after-some-time/84324/3
 
-#---------------------------------------------------------------------------------------------------------------
-N=local-zorg
-P="~/.local/libvirt/images"
-mkdir -p $P &&virsh pool-define-as $N dir --target $P && virsh pool-build $N && virsh pool-start $N && virsh pool-autostart $N && virsh pool-list --all
-virsh pool-destroy $N && virsh pool-undefine $N && virsh pool-list --all 
-
-# copy iso
-
-virt-install -n sysrescd --osinfo linux2020 --install no_install=yes   --vcpus 1 --ram 1024 --video none --graphics none  --disk device=cdrom,path=/home/zorg/.local/libvirt/images/systemrescue-8.03-amd64.iso  -w network=default  --transient && virsh destroy sysrescd
-# tab, after esc for repaint menu
-# choose menu item with up\down key, tab key for edit boot options, add kernel arg: console=ttyS0, enter for run
-pacman -Syy && pacman -S --noconfirm xterm && eval $(/usr/bin/resize) && mc
+# Libvirtd stop responding after some time
+tee /etc/sysconfig/virtnetworkd << EOF > /dev/null
+VIRTNETWORKD_ARGS=
+EOF
+systemctl enable virtnetworkd.service
+systemctl restart virtnetworkd.service
 
 #---------------------------------------------------------------------------------------------------------------
-#virt-install --noautoconsole
-#virt-customize -a /var/lib/libvirt/images/imagetest1.qcow2 --hostname vm01.test.lab --root-password password:rootpw --ssh-inject 'root:file:labkey.pub' --uninstall cloud-init --selinux-relabel
-#virsh net-update vagrant-libvirt add dns-host '<host ip="192.168.11.11"> <hostname>blah2.laine.org</hostname> </host>' --live --config
+# KICKSTART
 
-#---------------------------------------------------------------------------------------------------------------
-# AUTO WITH SERIAL
 virt-install -n gitlab --osinfo ol9 --boot uefi \
 --vcpus 4 --ram 4096 --video none --graphics none --disk path=/var/lib/libvirt/images/gitlab.qcow2,size=64 \
 --network type=direct,source=eno1.4,source_mode=bridge \
 --location OracleLinux-R9-U2-x86_64-boot-uek.iso,kernel=images/pxeboot/vmlinuz,initrd=/images/pxeboot/initrd.img \
 --extra-args "inst.stage2=hd:LABEL=OL-9-2-0-BaseOS-x86_64 console=ttyS0 inst.text \
-inst.ks=https://raw.githubusercontent.com/zimmnik/provisioner/master/kickstart/oracleA.cfg"
-
+inst.ks=https://raw.githubusercontent.com/zimmnik/provisioner/master/kickstart/oracle.cfg"
 #To exit a virsh console session - CTRL + Shift + ]
+virsh destroy OL9; virsh list --all; virsh undefine OL9 --nvram --storage vda; virsh list --all; virsh vol-list default
 
 time virt-install -n OL8 --osinfo ol8.5 --boot uefi \
 --vcpus 2 --ram 2048  --video none --graphics none --disk path=/var/lib/libvirt/images/OL8.qcow2,size=16 -w network=default \
@@ -63,17 +69,11 @@ virt-install -n f37 --osinfo fedora35 --boot uefi \
 --network type=direct,source_mode=bridge,source=enp4s0 \
 --location Fedora-Everything-netinst-x86_64-37-1.7.iso,kernel=/images/pxeboot/vmlinuz,initrd=/images/pxeboot/initrd.img \
 --extra-args "inst.stage2=hd:LABEL=Fedora-E-dvd-x86_64-37 console=ttyS0 inst.text \
-inst.ks=https://raw.githubusercontent.com/zimmnik/provisioner/master/kickstart/f37a.cfg "
+inst.ks=https://raw.githubusercontent.com/zimmnik/provisioner/master/kickstart/fedora.cfg "
 
-# STOP and REMOVE VM
-virsh destroy OL9; virsh list --all; virsh undefine OL9 --nvram --storage vda; virsh list --all; virsh vol-list default
 #---------------------------------------------------------------------------------------------------------------
+# OPENWRT
 mkdir wrtlab && cd wrtlab 
-
-# get openwrt disk image
-curl -LO https://downloads.openwrt.org/releases/21.02.0/targets/x86/64/openwrt-21.02.0-x86-64-generic-ext4-combined.img.gz
-curl -LO https://downloads.openwrt.org/releases/21.02.0/targets/x86/64/sha256sums
-sha256sum -c sha256sums --ignore-missing && rm sha256sums
 
 gunzip openwrt-21.02.0-x86-64-generic-ext4-combined.img.gz 
 qemu-img convert -f raw -O qcow2 openwrt-21.02.0-x86-64-generic-ext4-combined.img openwrt-21.02.0-x86-64-generic-ext4-combined.qcow2
@@ -106,21 +106,52 @@ virt-install -n sysrescd --osinfo linux2020 --install no_install=yes  \
 # choose menu item with up\down key, tab key for edit boot options, add kernel arg: console=ttyS0, enter for run
 pacman -Syy && pacman -S --noconfirm xterm && eval $(/usr/bin/resize) && mc
 
-#--------------------------------------------------------
-Libvirtd stop responding after some time
-sudo tee /etc/sysconfig/virtnetworkd << EOF > /dev/null
-VIRTNETWORKD_ARGS=
-EOF
-sudo systemctl enable virtnetworkd.service
-sudo systemctl restart virtnetworkd.service
-
 #---------------------------------------------------------
+# RUN FROM CONTAINER
 docker run -it --rm --name demo -v /var/run/libvirt/:/var/run/libvirt/ --privileged almalinux:8
 yum -y install libvirt-client && virsh nodeinfo
 
 #---------------------------------------------------------
-# quick one-time console fedora start
-virt-install --osinfo linux2022  --boot uefi --graphics none --disk none \
+# FEDORA LIVE CD
+virt-install --name flivecd --install no_install=yes \
+--osinfo fedora-unknown --graphics none --disk none \
+--boot loader=/usr/share/edk2/ovmf/OVMF_CODE.fd,loader.readonly=yes,loader_secure=no \
 --location Fedora-Workstation-Live-x86_64-38-1.6.iso \
 --extra-args "console=ttyS0 root=live:CDLABEL=Fedora-WS-Live-38-1-6 rd.live.image systemd.unit=multi-user.target" \
 --transient
+
+#---------------------------------------------------------
+# FEDORA CLOUD IMAGE
+
+cat << 'EOF' > cloud_init_meta.yaml 
+#cloud-config
+# vim: syntax=yaml
+# FYI 
+# https://cloudinit.readthedocs.io/en/latest/reference/datasources/nocloud.html#example-meta-data
+instance-id: i-fdebug
+local-hostname: cloudimg
+EOF
+
+cat << 'EOF' > cloud_init_user.yaml 
+#cloud-config
+# vim: syntax=yaml
+# FYI
+# https://cloudinit.readthedocs.io/en/latest/reference/modules.html#users-and-groups
+users:
+- name: root
+  lock_passwd: False
+  plain_text_passwd: root
+
+#fqdn: myhost.example.com
+
+#WAREHOUSE
+#eval $(resize)
+#cat /etc/cloud/cloud.cfg
+#cloud-init analyze show | less
+EOF
+
+virt-install --name fdebug --install no_install=yes \
+--osinfo fedora-unknown --graphics none \
+--boot loader=/usr/share/edk2/ovmf/OVMF_CODE.fd,loader.readonly=yes,loader_secure=no \
+--cloud-init meta-data=cloud_init_meta.yaml,user-data=cloud_init_user.yaml \
+--disk=size=16,backing_store="Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2"
