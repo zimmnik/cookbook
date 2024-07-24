@@ -12,6 +12,7 @@ export OBSERVER_S_PASSWORD="blahblah"
 # INSTALL
 yum -yq install epel-release vim bash-completion
 yum -yq install nut usbutils
+ln -s /usr/lib/tmpfiles.d/nut-common.conf /usr/lib/tmpfiles.d/nut-client.conf
 
 # UPS DRIVER
 cat <<EOF > /etc/ups/ups.conf
@@ -22,12 +23,6 @@ ignorelb
 override.battery.charge.low = 99
 EOF
 cat /etc/ups/ups.conf && ls -alh /etc/ups/ups.conf
-
-cat << EOF > /etc/systemd/system/nut-driver-enumerator.service.d/override.conf 
-[Service]
-ExecStartPre=
-ExecStartPre=-/usr/bin/systemd-tmpfiles --create /usr/lib/tmpfiles.d/nut-common.conf
-EOF
 
 lsusb
 udevadm control --reload-rules && udevadm trigger
@@ -92,17 +87,12 @@ NOTIFYFLAG NOCOMM       EXEC+SYSLOG
 NOTIFYFLAG NOPARENT     EXEC+SYSLOG
 EOF
 
-mkdir -p /etc/systemd/system/nut-monitor.service.d
-cat << EOF > /etc/systemd/system/nut-monitor.service.d/override.conf 
-[Service]
-ExecStartPre=
-ExecStartPre=-/usr/bin/systemd-tmpfiles --create /usr/lib/tmpfiles.d/nut-common.conf
-EOF
-
 systemctl enable nut.target --now
 sleep 2 && journalctl -u nut*
 
 #TEST
 upsc APC
+#upsrw APC
+#upsrw -u admin -p ${ADMIN_PASSWORD} -s battery.mfr.date=2021/01/28
 upscmd -u admin -p ${ADMIN_PASSWORD} -l APC
 upscmd -u admin -p ${ADMIN_PASSWORD} APC test.panel.start 
