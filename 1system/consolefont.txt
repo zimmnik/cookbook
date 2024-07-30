@@ -1,0 +1,3 @@
+cat /etc/vconsole.conf
+ls /usr/lib/kbd/consolefonts/
+setfont pancyrillic.f16.psfu.gz && showconsolefont && date

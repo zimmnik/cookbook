@@ -29,6 +29,7 @@ udevadm control --reload-rules && udevadm trigger
 systemctl enable nut-driver-enumerator --now
 #usbhid-ups -u nut -DDD -a APC
 #upsdrvctl -D -d start
+#upsdrvctl -D -d -t shutdown
 #systemctl enable nut-driver@APC --now
 sleep 2 && journalctl -u nut*
 
@@ -96,3 +97,10 @@ upsc APC
 #upsrw -u admin -p ${ADMIN_PASSWORD} -s battery.mfr.date=2021/01/28
 upscmd -u admin -p ${ADMIN_PASSWORD} -l APC
 upscmd -u admin -p ${ADMIN_PASSWORD} APC test.panel.start 
+#upsmon -c fsd
+#while true; do echo -n "$(date) "; upsc APC |& grep charge: | cut -d " " -f 2; sleep 15; done
+
+#less /lib/systemd/system-shutdown/nutshutdown 
+#systemctl stop nut-driver@APC
+#/usr/sbin/upsdrvctl shutdown
+
