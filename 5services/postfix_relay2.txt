@@ -2,7 +2,7 @@
 set -o pipefail
 set -o errexit
 set -o nounset
-#set -o xtrace
+set -o xtrace
 
 #Google: 2-Step Verification + App passwords
 #Yandex: Mail → All settings → Email clients → Use a mail client to retrieve your Yandex mail → From the imap.yandex.com server via IMAP → true

@@ -3,20 +3,17 @@ bios
 ipkvm (ilo vsp?)
 installation (parted boot label?)
 
-update && reboot
-  yum -y update
-  yum upgrade --refresh
-  yum -y install dnf-plugin-system-upgrade
-  sudo dnf system-upgrade download --releasever=35
-  dnf system-upgrade reboot
+packages and repos
+  yum -y update && reboot
 
+boot
   remove useless rhel kernel?
   efibootmgr
+  dracut ssh
 
 accounts + ssh(passwords and keys)
 network
   hostname
-  wifi hotspot
   vpn
   nmcli.txt 
 
@@ -31,6 +28,7 @@ locale
   localectl set-locale LANG="ru_RU.UTF-8"
   localectl set-locale LC_MESSAGES="en_US.UTF-8"
   localectl
+  cosolefonts
 
 power
   nut
@@ -42,7 +40,8 @@ ssd trim
 smart
   see smartd.txt 
 
-monitoring (mta?)
+monitoring
+  sensors
   see postfix_relay.txt
   rasdaemon
 

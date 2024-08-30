@@ -10,4 +10,5 @@ dracut --list-modules | grep ssh
 cat /root/.ssh/authorized_keys
 dracut -f -v
 lsinitrd | grep 'authorized\|bin/sshd'
-grubby --update-kernel=ALL --args="rd.neednet=1 ifname=bootnet:a0:b3:cc:df:10:4b ip=192.168.10.251::192.168.10.1:255.255.255.0:bro:bootnet:off:192.168.10.251 nameserver=192.168.10.1"
+man dracut.cmdline
+grubby --update-kernel=ALL --args="rd.neednet=1 ifname=main:2a:19:6f:02:18:f8 ip=192.168.29.251::192.168.29.254:255.255.255.0:oscar:main:off:192.168.29.254"

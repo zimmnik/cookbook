@@ -1,5 +1,5 @@
 https://serverfault.com/questions/643542/how-do-i-get-notified-of-ecc-errors-in-linux
 
 yum -y install rasdaemon
-systemctl enable rasdaemon --now && 118  systemctl status rasdaemon
+systemctl enable rasdaemon --now && systemctl status rasdaemon
 ras-mc-ctl --summary
