@@ -59,6 +59,7 @@ EOF
 sleep 2 && journalctl -u postfix
 
 # MAILX TEST
+# dnf -y install s-nail
 yum -y install mailx
 export SUBJECT="MAILXTEST"
 export MAILBODY="${HOSTNAME}"

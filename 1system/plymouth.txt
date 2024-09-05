@@ -1,0 +1,6 @@
+plymouth-set-default-theme --list
+time plymouth-set-default-theme bgrt -R
+
+vim /etc/default/grub
+GRUB_CMDLINE_LINUX="... splash quiet loglevel=3"
+grub2-mkconfig /boot/grub2/grub.cfg --update-bls-cmdline

@@ -1,4 +1,12 @@
 #----------------------------------------------------------------------------------------------
+#https://hansdegoede.livejournal.com/19081.html
+grub2-editenv list
+grub2-editenv - set menu_auto_hide=1 && grub2-editenv list
+grub2-mkconfig -o /boot/grub2/grub.cfg --update-bls-cmdline
+
+sudo grub2-editenv - unset menu_auto_hide
+
+#----------------------------------------------------------------------------------------------
 #https://superuser.com/a/880265
 You can use GRUB's sleep command in grub.cfg like this:
 
