@@ -1,0 +1,24 @@
+https://www.redhat.com/sysadmin/podman-kubernetes-secrets
+https://www.redhat.com/sysadmin/podman-play-kube-updates
+
+https://www.redhat.com/sysadmin/quadlet-podman
+https://www.redhat.com/sysadmin/multi-container-application-podman-quadlet
+https://github.com/ygalblum/quadlet-demo/tree/main
+https://github.com/containers/podman/blob/main/docs/source/markdown/podman-systemd.unit.5.md
+
+man podman-kube-play
+man podman-generate-systemd
+man podman-systemd.unit
+
+ln -s /srv/prj/demo/demo-tra/ / && ls -alh / 
+ln -s /srv/prj/demo/quadlet/* /etc/containers/systemd/ && ls -alh /etc/containers/systemd/
+/usr/libexec/podman/quadlet -dryrun |& less
+systemctl daemon-reload && systemctl list-unit-files | grep demo
+systemctl restart demo-network && docker network ls
+systemctl start demo && docker ps -a
+
+systemctl stop demo && docker ps -a
+docker system prune -af
+\rm -v /etc/containers/systemd/*
+\rm -v /demo-tra
+

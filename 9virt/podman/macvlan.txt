@@ -1,0 +1,25 @@
+########################################################################
+# MACVLAN CNI - old way
+yum -y install containernetworking-plugins
+
+#OL9 FIX
+cat <<EOF > /etc/systemd/system/cni-dhcp.service.d/override.conf
+[Service]
+ExecStart=
+ExecStart=/usr/libexec/cni/dhcp daemon
+EOF
+
+systemctl --now enable cni-dhcp; systemctl status cni-dhcp
+cat <<EOF > /etc/containers/containers.conf
+[network]
+network_backend = "cni"
+EOF
+
+# MACVLAN NETAVALK v1.7+ - new way
+systemctl enable netavark-dhcp-proxy.service --now
+
+# MACVLAN CONTAINER START
+docker network create -d macvlan -o parent=eno1.4 cHOME && docker network ls
+podman run -it --rm --name nginxtest --network cHOME --mac-address=92:d0:c6:0b:29:33 --hostname=nginxtest nginx
+
+podman play kube --network macvlan pod.yml

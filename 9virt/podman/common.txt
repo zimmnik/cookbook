@@ -1,0 +1,15 @@
+yum -y install @"Container Management" podman-docker && touch /etc/containers/nodocker
+
+#ip link delete cni-podman0
+
+cat << 'EOF' >> Dockerfile && docker build -t debug .
+FROM debian
+RUN apt update && apt -y install nmap dnsutils vim less
+EOF
+docker run -it --rm debug ping ya.ru
+
+docker run -it --rm -v ~/Desktop/temp:/mnt:Z python:2 bash
+
+docker run --name nginx -dP -v ~/Desktop/provisioner/kickstart:/usr/share/nginx/html:Z,ro nginx:stable
+docker port -l
+docker rm -f nginx

@@ -1,0 +1,28 @@
+#rootfull mode is necessary for publishing ports with number below 1000
+
+cd allstor-init && sudo docker build -t allstor-init:latest; cd ..; sudo docker image ls
+cd allstor-samba && sudo docker build -t allstor-samba:latest; cd ..; sudo docker image ls
+sudo docker create --pod new:allstor --cpus 0.5 --memory 128M --publish 445:445 --init-ctr=once --volume allstor:/srv --name allstor-init allstor-init:latest; sudo docker pod ls
+sudo docker create --pod allstor --cpus 1 --memory 512M --volume allstor:/srv --name allstor-samba allstor-samba:latest; sudo docker pod ls
+sudo docker generate kube allstor > pod.yml; less pod.yml
+
+sudo docker pod start allstor; sudo docker ps -a
+sudo docker pod rm -f allstor; sudo docker volume rm allstor -f; sudo docker volume ls
+
+sudo docker play kube --build --replace pod.yml
+sudo docker play kube --down pod.yml
+
+k create deployment xxx --dry-run=client --image=nginx -o yaml | less
+
+#----------------------------------------------------------------------------------------------------------------------------
+# MACVTAP MODE
+for IMG in */; do cd $IMG; docker build -t ${IMG%/}:latest .; cd ..; done; docker image ls
+
+docker pod create --name allstor --hostname=allstor --infra-name=allstor-infra --network cHOME --mac-address=92:d1:c6:1b:29:00
+docker create --pod allstor --volume /srv/data/allstor:/srv/data:Z --name allstor-init --init-ctr=once allstor-init:latest
+docker create --pod allstor --volume /srv/data/allstor:/srv/data:Z --name allstor-samba allstor-samba:latest
+docker create --pod allstor --volume /srv/data/allstor:/srv/data:Z --name allstor-sshd allstor-sshd:latest
+docker create --pod allstor --volume /srv/data/allstor:/srv/data:Z --name allstor-syncthing allstor-syncthing:latest
+
+docker pod ls && docker pod start allstor
+
