@@ -57,3 +57,6 @@ btrfs balance start -dconvert=raid10 -mconvert=raid1c4 /mnt
 yum -y install vim
 dd if=/dev/sda bs=512 count=1 | xxd
 grub2-install /dev/sda
+
+btrfs property set -t subvol /srv/data/proxstor ro true
+btrfs send -v /srv/data/proxstor/ | zstdmt -z - | ssh oscar 'zstdmt -d | btrfs receive /srv/data'
