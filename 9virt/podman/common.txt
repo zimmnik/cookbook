@@ -13,3 +13,6 @@ docker run -it --rm -v ~/Desktop/temp:/mnt:Z python:2 bash
 docker run --name nginx -dP -v ~/Desktop/provisioner/kickstart:/usr/share/nginx/html:Z,ro nginx:stable
 docker port -l
 docker rm -f nginx
+
+ssh oscar 'docker volume create allstor-transmission-config'
+docker volume export allstor-transmission-config | zstdmt -z - | ssh oscar 'zstdmt -d | docker volume import allstor-transmission-config -'
