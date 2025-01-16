@@ -14,3 +14,6 @@ helm get manifest gitlab-runner | less
 helm get gitlab-runner | less
 helm uninstall gitlab-runner
 k delete ns gitlab-runner
+
+helm upgrade --install canary . --dry-run --debug |& less -RN
+helm template . --debug --dry-run |& less -RN
