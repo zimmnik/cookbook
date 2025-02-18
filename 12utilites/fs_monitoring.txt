@@ -1,0 +1,3 @@
+find / | sort -u > /tmp/first
+find / | sort -u > /tmp/last
+diff /tmp/first /tmp/last
