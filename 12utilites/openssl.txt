@@ -26,6 +26,9 @@ openssl x509 -CA CA.crt -CAkey CA.key -CAcreateserial \
 openssl x509 -in cert.crt -noout -text | less
 \rm -v cert.csr
 
+# Check key and crt relation. Output must be empty
+diff <(openssl x509 -noout -modulus -in cert.crt) <(openssl rsa -noout -modulus -in cert.key)
+
 #----------------------------------------------------------------------------------------------------------------------------
 # INSTALL SELF SIGNED CA
 cp mos_local_root_CA.crt /etc/pki/ca-trust/source/anchors/blahblahCA.crt
