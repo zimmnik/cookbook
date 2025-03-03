@@ -1,0 +1,104 @@
+# FYI
+# https://access.redhat.com/documentation/en-us/red_hat_directory_server/11/html/administration_guide/examples-of-common-ldapsearches
+# https://unix.stackexchange.com/questions/68377/how-to-make-ldapsearch-working-on-sles-over-tls-using-certificate
+# https://learn.microsoft.com/en-us/troubleshoot/windows-server/identity/enable-ldap-over-ssl-3rd-certification-authority?ranMID=46131&ranEAID=a1LgFw09t88&ranSiteID=a1LgFw09t88-YWpAet6ScJs5ArjbgOea1w&epi=a1LgFw09t88-YWpAet6ScJs5ArjbgOea1w&irgwc=1&OCID=AIDcmm549zy227_aff_7806_1243925&tduid=(ir__hguuj3vxzkkfdg2dzfk01ppn6e2x9snjptiejxfy00)(7806)(1243925)(a1LgFw09t88-YWpAet6ScJs5ArjbgOea1w)()
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openldap
+  labels:
+    app: openldap
+spec:
+  selector:
+    matchLabels:
+      app: openldap
+  template:
+    metadata:
+      labels:
+        app: openldap
+    spec:
+      containers:
+        - name: openldap
+          image: nexus.demo.tech:19120/bitnami/openldap:2.6
+          env:
+            - name: LDAP_ROOT
+              value: 'dc=demotest,dc=local'
+            - name: LDAP_PORT_NUMBER
+              value: '389'
+            - name: LDAP_ADMIN_USERNAME
+              value: admin
+            - name: LDAP_ADMIN_PASSWORD
+              value: adminpassword
+            - name: LDAP_EXTRA_SCHEMAS
+              value: "cosine,inetorgperson"
+            - name: LDAP_CUSTOM_LDIF_DIR
+              value: "/ldifs"
+            - name: LDAP_CUSTOM_SCHEMA_FILE
+              value: tree.ldif
+          #- name: LDAP_ADMIN_DN
+          #  value: cn=admin,DC=demotest,DC=local
+          #- name: LDAP_ALLOW_ANON_BINDING
+          #  value: "no"
+          - name: BITNAMI_DEBUG
+            value: "true"
+          volumeMounts:
+            - name: openldap-ldiff-vol
+              mountPath: /ldifs
+      volumes:
+        - name: openldap-ldiff-vol
+          configMap:
+            name: openldap-ldiff
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: openldap
+  labels:
+    app: openldap
+spec:
+  selector:
+    app: openldap
+  type: NodePort
+  ports:
+    - name: ldap
+      port: 389
+      targetPort: 389
+      nodePort: 30389
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openldap-ldiff
+  labels:
+    app: openldap
+data:
+  tree.ldif: |
+    version: 1
+
+    # Organisation
+    dn: dc=demotest,dc=local
+    objectClass: dcObject
+    objectClass: organization
+    dc: demotest
+    o: demotest.local
+
+    dn: ou=demoTEST,dc=demotest,dc=local
+    objectClass: organizationalUnit
+    ou: demoTEST
+
+    dn: ou=GROUPS,ou=demoTEST,dc=demotest,dc=local
+    objectClass: organizationalUnit
+    ou: GROUPS
+
+    dn: ou=USERS,ou=demoTEST,dc=demotest,dc=local
+    objectClass: organizationalUnit
+    ou: USERS
+
+    # Sfera users ppts
+    dn: uid=admin_ppts,ou=USERS,ou=demoTEST,dc=demotest,dc=local
+    objectClass: inetOrgPerson
+    uid: admin_ppts
+    sn: admin_ppts
+    cn: admin_ppts
+    userPassword: adminpassword
