@@ -47,5 +47,23 @@ openssl x509 -inform pem -in cert.pem -outform der -out cert.der
 keytool -importcert -keystore keystore.jks -alias somecertname -storepass blahblah -file cert.der
 keytool -list -keystore keystore.jks -storepass blahblah 
 
+#----------------------------------------------------------------------------------------------------------------------------
+# KEYSTORE FROM JKS TO PEM AND BACK
+keytool -list -keystore keystore.jks -storepass secret
 
+keytool -importkeystore \
+  -srckeystore  keystore.jks -srcstorepass  secret -srcalias  localhost -srcstoretype  JKS \
+  -destkeystore keystore.p12 -deststorepass secret -destalias localhost -deststoretype PKCS12
+#openssl pkcs12 -info -in keystore.p12 -passin pass:secret -nodes
 
+openssl pkcs12 -in keystore.p12 -passin pass:secret -out keystore.pem -nodes
+#openssl pkcs12 -in keystore.p12 -passin pass:secret -nodes -nocerts -out keystore.pem
+#cat keystore.pem
+
+openssl pkcs12 -export -in keystore.pem -out keystore2.p12 -passout pass:secret -name localhost
+#openssl pkcs12 -info -in keystore2.p12 -passin pass:secret -nodes
+
+keytool -importkeystore \
+  -srckeystore  keystore2.p12 -srcstorepass  secret -srcalias  localhost -srcstoretype PKCS12 \
+  -destkeystore keystore2.jks -deststorepass secret -destalias localhost -deststoretype JKS
+keytool -list -keystore keystore2.jks -storepass secret
