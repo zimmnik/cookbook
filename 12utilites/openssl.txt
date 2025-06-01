@@ -1,3 +1,14 @@
+#Get Let'sEncrypt cert
+docker run -it --rm -v ${PWD}/ssl:/opt:Z --hostname cwt.zimmnik.ru --network cDMZ --mac-address=92:d3:c9:0b:29:00 fedora
+dnf makecache
+dnf install python3 augeas-devel
+python3 -m venv --upgrade-deps .venv && source .venv/bin/activate
+echo Hello > README.txt
+python3 -m http.server 80
+pip install certbot
+certbot certonly --standalone
+cp -v /etc/letsencrypt/live/cwt.zimmnik.ru/* /opt/
+
 #see content pem certificate
 openssl x509 -in cert.crt -noout -text 
 
