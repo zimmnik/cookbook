@@ -55,7 +55,7 @@ mount -o compress=zstd:1,subvol=root "/dev/mapper/luks-$(cryptsetup luksUUID ${D
 mkfs.ext4 ${DISK_BOOT} && mount ${DISK_BOOT} /mnt/restore/boot/
 gpg -d --pinentry-mode loopback -o - boot-2022-05-30-2054665304.tar.zst.gpg | zstdmt -d | tar -C /mnt/restore -xvf - 
 
-mkfs.vfat -F 32 ${DISK_EFI} && mount ${DISK_EFI} /mnt/restore/boot/efi/
+mkfs.vfat -F 32 -n EFI -i 3467abcd ${DISK_EFI} && mount ${DISK_EFI} /mnt/restore/boot/efi/
 gpg -d --pinentry-mode loopback -o - efi-2022-05-30-2054665304.tar.zst.gpg | zstdmt -d | tar -C /mnt/restore -xvf -
 
 mv /mnt/restore/etc/resolv.conf /mnt/restore/etc/resolv.conf.old
@@ -119,8 +119,8 @@ cat /boot/loader/entries/*.x86_64.conf
 \rm -v /boot/efi/EFI/ubuntu/grub.cfg
 
 \rm -v /boot/grub2/grub.cfg
-yum -y upgrade shim-* grub2-efi-* grub2-common
-yum -y reinstall shim-* grub2-efi-* grub2-common
+yum -y upgrade grub2-common grub2-efi grub2-efi-modules shim-\*
+yum -y reinstall grub2-common grub2-efi grub2-efi-modules shim-\*
 
 logout 
 reboot
