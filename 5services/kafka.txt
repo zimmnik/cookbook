@@ -40,3 +40,37 @@ RESULT=   $(bin/kafka-console-consumer.sh --bootstrap-server ${SERVER} --topic $
 if [[ ${MSG} != ${RESULT} ]]; then echo FAIL; else echo SUCCESS; fi
 
 bin/kafka-topics.sh --bootstrap-server ${SERVER} --topic ${TOPIC} --delete
+
+#---------------------------------------------------
+# server.properties
+node.id=1
+process.roles=broker,controller
+inter.broker.listener.name=INTERNAL
+controller.listener.name=CONTROLLER
+listeners=INTERNAL://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+advertised.listeners=INTERNAL://192.168.1.26:9092,EXTERNAL://192.168.1.26:9094
+# listener.security.protocol.map=CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+log.dirs="/opt/kafka/data/log"
+controller.quorum.voters=1@192.168.1.26:9093,2@192.168.1.27:9093,3@192.168.1.28:9093
+
+broker.rack=DC-A
+replica.selector.class=org.apache.kafka.common.replica.RackAwareReplicaSelector
+
+#SSL
+ssl.keystore.type=PEM
+ssl.keystore.location='/opt/kafka/ssl/csmax-kf.pem'
+ssl.keystore.key.location='/opt/kafka/ssl/csmax-kf.key'
+ssl.truststore.type=PEM
+ssl.truststore.location='/opt/kafka/ssl/ca_vtbl.crt'
+
+controller.listener.security.protocol=SSL
+#listeners=BROKER://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+#advertised.listeners=BROKER://A1:9092
+
+ssl.client.auth=none
+
+listener.security.protocol.map=INTERNAL:SSL,CONTROLLER:SSL,EXTERNAL:SSL
+
+#inter.broker.listener.name=BROKER
+
+cluster.id=xxx
