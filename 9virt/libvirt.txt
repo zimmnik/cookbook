@@ -140,19 +140,25 @@ cat << 'EOF' > cloud_init_user.yaml
 users:
   - name: root
     lock_passwd: false
-    plain_text_passwd: supersecurepassword
+    plain_text_passwd: sleepyBromer3@2
   - name: admin
     lock_passwd: false
-    plain_text_passwd: supersecurepassword
+    plain_text_passwd: dotaisbetter5@1
     sudo: 'ALL=(ALL) NOPASSWD:ALL'
     ssh_authorized_keys:
-      - ssh-ed25519 blabla comment
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF2KvjY/4k6PuOC5G3vLmPhXEzv6MfhFHcd6H6II4Qga root@oscar
   - name: paper
     no_create_home: true
     no_log_init: true
     shell: /sbin/nologin
     sudo: []
 timezone: Europe/Moscow
+packages:
+  - vim
+  - less
+  - nano
+  - bash-completion
+  - java-25-openjdk-headless
 
 #WAREHOUSE
 #eval $(resize)
