@@ -121,15 +121,15 @@ virt-install --name flivecd --install no_install=yes \
 --transient
 
 #---------------------------------------------------------
-# FEDORA CLOUD IMAGE
+# LIBVIRT+FEDORA+CLOUDINIT+VSOCK+SSH
 
 cat << 'EOF' > cloud_init_meta.yaml 
 #cloud-config
 # vim: syntax=yaml
 # FYI 
 # https://cloudinit.readthedocs.io/en/latest/reference/datasources/nocloud.html#example-meta-data
-instance-id: i-fdebug
-local-hostname: cloudimg
+instance-id: v1
+local-hostname: paper
 EOF
 
 cat << 'EOF' > cloud_init_user.yaml 
@@ -138,20 +138,62 @@ cat << 'EOF' > cloud_init_user.yaml
 # FYI
 # https://cloudinit.readthedocs.io/en/latest/reference/modules.html#users-and-groups
 users:
-- name: root
-  lock_passwd: False
-  plain_text_passwd: root
-
-#fqdn: myhost.example.com
+  - name: root
+    lock_passwd: false
+    plain_text_passwd: supersecurepassword
+  - name: admin
+    lock_passwd: false
+    plain_text_passwd: supersecurepassword
+    sudo: 'ALL=(ALL) NOPASSWD:ALL'
+    ssh_authorized_keys:
+      - ssh-ed25519 blabla comment
+  - name: paper
+    no_create_home: true
+    no_log_init: true
+    shell: /sbin/nologin
+    sudo: []
+timezone: Europe/Moscow
 
 #WAREHOUSE
 #eval $(resize)
 #cat /etc/cloud/cloud.cfg
 #cloud-init analyze show | less
+#cloud-init schema --system --annotate
 EOF
 
-virt-install --name fdebug --install no_install=yes \
---osinfo fedora-unknown --graphics none \
---boot loader=/usr/share/edk2/ovmf/OVMF_CODE.fd,loader.readonly=yes,loader_secure=no \
---cloud-init meta-data=cloud_init_meta.yaml,user-data=cloud_init_user.yaml \
---disk=size=16,backing_store="Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2"
+cat << 'EOF' > cloud_init_network.yaml 
+#cloud-config
+# vim: syntax=yaml
+version: 1
+config:
+  - name: enp1s0
+    type: physical
+    subnets:
+      - type: static
+        address: 192.168.3.101/24
+        gateway: 192.168.3.254
+        dns_nameservers:
+          - 192.168.3.254
+        dns_search:
+          - zimmnik.ru
+EOF
+touch disk.qcow && chown qemu:qemu disk.qcow && semanage fcontext -a -t virt_image_t "${PWD}/disk.qcow" && restorecon -FRv ${PWD}/disk.qcow && ls -alhZ disk.qcow && rm -v disk.qcow
+
+virt-install --name paper --osinfo fedora-unknown \
+--boot uefi,firmware.feature0.name=secure-boot,firmware.feature0.enabled=no \
+--cloud-init meta-data=cloud_init_meta.yaml,user-data=cloud_init_user.yaml,network-config=cloud_init_network.yaml \
+--vcpus 4 --ram 16384 --graphics none \
+--disk=backing_store="/srv/data/img/fedora/Fedora-Cloud-Base-Generic-44-1.7.x86_64.qcow2",path=disk.qcow,size=16 \
+--network type=direct,source=main.3,source.mode=bridge,model=virtio \
+--channel unix,target.type=virtio,target.name=org.qemu.guest_agent.0 --vsock cid.auto=yes \
+--install no_install=yes --noautoconsole
+
+while ! virsh qemu-agent-command paper '{"execute":"guest-ping"}' --timeout 1 &>/dev/null; do sleep 2; done
+
+virsh qemu-agent-command paper '{"execute":"guest-info"}' | jq | less
+virsh qemu-agent-command paper '{"execute":"guest-network-get-interfaces"}' | jq | less
+
+dnf install libvirt-ssh-proxy
+ssh admin@qemu:system/paper
+
+virsh destroy paper && virsh undefine paper --remove-all-storage --nvram
