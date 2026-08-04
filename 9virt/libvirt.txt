@@ -195,6 +195,7 @@ virt-install --name paper --osinfo fedora-unknown \
 --install no_install=yes --noautoconsole
 
 while ! virsh qemu-agent-command paper '{"execute":"guest-ping"}' --timeout 1 &>/dev/null; do sleep 2; done
+virsh autostart paper 
 
 virsh qemu-agent-command paper '{"execute":"guest-info"}' | jq | less
 virsh qemu-agent-command paper '{"execute":"guest-network-get-interfaces"}' | jq | less
